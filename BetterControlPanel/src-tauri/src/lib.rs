@@ -46,6 +46,7 @@ fn window_vibrancy(app_handle: tauri::AppHandle) -> bool {
     static IS_WINDOW_VIBRANCY: Mutex<bool> = Mutex::new(false);
     let window = app_handle.get_window("main").unwrap();
     let mut vibrancy = IS_WINDOW_VIBRANCY.lock().unwrap();
+    *vibrancy = !*vibrancy;
     if *vibrancy {
         #[cfg(target_os = "macos")]
         window_vibrancy::apply_vibrancy(&win, NSVisualEffectMaterial::FullScreenUI).unwrap();
@@ -59,7 +60,6 @@ fn window_vibrancy(app_handle: tauri::AppHandle) -> bool {
         #[cfg(target_os = "windows")]
         window_vibrancy::clear_mica(&window).unwrap();
     }
-    *vibrancy = !*vibrancy;
     *vibrancy
 }
 
