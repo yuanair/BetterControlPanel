@@ -1,0 +1,37 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "dev",
+			"path": "BetterControlPanel",
+			"problemMatcher": [],
+			"label": "npm_dev_server - BetterControlPanel"
+		},
+		{
+			"type": "npm",
+			"script": "tauri build",
+			"path": "BetterControlPanel",
+			"problemMatcher": [],
+			"label": "release - BetterControlPanel"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+			"args": ["--no-default-features"],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "cargo_run"
+		},
+		{
+			"type": "cargo",
+			"command": "build",
+			"args": ["--no-default-features"],
+			"problemMatcher": [
+				"$rustc"
+			],
+            "label": "build",
+        }
+	]
+}
