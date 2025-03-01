@@ -41,11 +41,26 @@ async function greet() {
         <span>Better Control Panel</span>
       </div>
       <div class="window-controls">
-        <button class="control-btn vibrancy" title="vibrancy" @click="window_vibrancy()"></button>
-        <button class="control-btn pin" title="置顶" @click="lock_window()"></button>
-        <button class="control-btn minimize" title="最小化" @click="minimize_window()"></button>
-        <button class="control-btn maximize" title="最大化" @click="maximize_window()"></button>
-        <button class="control-btn close" title="关闭" @click="close_window()"></button>
+        <button class="control-btn settings" title="设置">
+          <img class="icon" src="./assets/ant-design/ant-design--setting-outlined.svg" alt="settings"/>
+        </button>
+        <button class="control-btn vibrancy" title="vibrancy" @click="window_vibrancy()">
+          <img class="icon" src="./assets/ant-design/ant-design--pushpin-outlined.svg" alt="pushpin"/>
+        </button>
+        <button class="control-btn pin" title="置顶" @click="lock_window()">
+          <img v-if="is_always_on_top" class="icon" src="./assets/ant-design/ant-design--pushpin-filled.svg"
+               alt="pushpin"/>
+          <img v-else class="icon" src="./assets/ant-design/ant-design--pushpin-outlined.svg" alt="pushpin"/>
+        </button>
+        <button class="control-btn minimize" title="最小化" @click="minimize_window()">
+          <img class="icon" src="./assets/ant-design/ant-design--minus-outlined.svg" alt="minimize"/>
+        </button>
+        <button class="control-btn maximize" title="最大化" @click="maximize_window()">
+          <img class="icon" src="./assets/ant-design/ant-design--border-outlined.svg" alt="maximize"/>
+        </button>
+        <button class="control-btn close" title="关闭" @click="close_window()">
+          <img class="icon" src="./assets/ant-design/ant-design--close-outlined.svg" alt="pushpin"/>
+        </button>
       </div>
     </div>
     <main class="container">
@@ -159,6 +174,18 @@ async function greet() {
   user-select: none;
 }
 
+.icon {
+  display: flex;
+  height: 16px;
+  width: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.icon path {
+  fill: white;
+}
+
 .row {
   display: flex;
   justify-content: center;
@@ -217,11 +244,10 @@ button {
 }
 
 .titlebar {
-  height: 40px;
+  height: 32px;
   background: rgba(0, 0, 0, 0.3);
   display: flex;
   position: relative;
-  align-items: center;
   padding: 0 12px;
   user-select: none;
 }
@@ -244,47 +270,58 @@ button {
 .window-controls {
   display: flex;
   position: absolute;
-  right: 8px;
-  gap: 8px;
+  right: 0;
 }
 
 .control-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   border: none;
-  cursor: pointer;
-  transition: filter 0.2s;
+  border-radius: 0;
+  padding: 8px;
+  box-shadow: none;
+  background-color: transparent;
+  align-items: center;
+  display: flex;
+  transition: all 0.2s;
 }
 
 .control-btn:hover {
   filter: brightness(1.2);
 }
 
-.minimize {
+.minimize:hover {
   background: #ffbd44;
 }
 
-.maximize {
+.maximize:hover {
   background: #00ca56;
 }
 
-.close {
+.close:hover {
   background: #ff605c;
 }
 
-.pin {
+.pin:hover {
   background: #888;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
+}
+
+.vibrancy:hover {
+  background: #45c0ff;
+}
+
+.settings:hover {
+  background: #858585;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
     background-color: #2f2f2f;
+  }
+
+  .icon {
+    filter: invert(70%);
   }
 
   a:hover {
@@ -300,6 +337,11 @@ button {
   button:active {
     background-color: #0f0f0f69;
   }
+
+  .icon {
+    fill: #ffffff;
+  }
+
 }
 
 </style>
