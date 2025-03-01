@@ -37,7 +37,7 @@ async function greet() {
   <div class="app-root">
     <div class="titlebar" data-tauri-drag-region>
       <div class="app-info">
-        <img src="./assets/logo.svg" class="app-icon">
+        <img src="./assets/logo.svg" class="app-icon" alt="logo">
         <span>Better Control Panel</span>
       </div>
       <div class="window-controls">
@@ -54,7 +54,7 @@ async function greet() {
 
       <div class="row">
         <a href="https://github.com/yuanair/BetterControlPanel/" target="_blank">
-          <img src="./assets/logo.svg" class="logo vite"/>
+          <img src="./assets/logo.svg" class="logo vite" alt="logo"/>
         </a>
       </div>
 
@@ -176,6 +176,7 @@ a:hover {
 
 h1 {
   text-align: center;
+  text-shadow: #000000 5px 0 5px;
 }
 
 input,

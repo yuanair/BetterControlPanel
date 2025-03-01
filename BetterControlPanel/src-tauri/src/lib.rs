@@ -51,7 +51,7 @@ fn window_vibrancy(app_handle: tauri::AppHandle) -> bool {
         window_vibrancy::apply_vibrancy(&win, NSVisualEffectMaterial::FullScreenUI).unwrap();
 
         #[cfg(target_os = "windows")]
-        window_vibrancy::apply_mica(&window, Some(true)).unwrap();
+        window_vibrancy::apply_mica(&window, None).unwrap();
     } else {
         #[cfg(target_os = "macos")]
         window_vibrancy::clear_vibrancy(&win).unwrap();
