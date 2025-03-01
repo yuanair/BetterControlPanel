@@ -4,7 +4,8 @@ import {invoke} from "@tauri-apps/api/core";
 
 const greetMsg = ref("");
 const name = ref("");
-const is_always_on_top = ref(false)
+const is_always_on_top = ref(false);
+const is_window_vibrancy = ref(false);
 
 async function lock_window() {
   is_always_on_top.value = await invoke("lock_window");
@@ -22,6 +23,10 @@ async function maximize_window() {
   await invoke("maximize_window");
 }
 
+async function window_vibrancy() {
+  is_window_vibrancy.value = await invoke("window_vibrancy");
+}
+
 async function greet() {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
   greetMsg.value = await invoke("greet", {name: name.value});
@@ -29,50 +34,51 @@ async function greet() {
 </script>
 
 <template>
-  <div class="titlebar" data-tauri-drag-region>
-    <div class="app-info">
-      <img src="./assets/vue.svg" class="app-icon">
-      <span>Better Control Panel</span>
+  <div class="app-root">
+    <div class="titlebar" data-tauri-drag-region>
+      <div class="app-info">
+        <img src="./assets/logo.svg" class="app-icon">
+        <span>Better Control Panel</span>
+      </div>
+      <div class="window-controls">
+        <button class="control-btn vibrancy" title="vibrancy" @click="window_vibrancy()"></button>
+        <button class="control-btn pin" title="置顶" @click="lock_window()"></button>
+        <button class="control-btn minimize" title="最小化" @click="minimize_window()"></button>
+        <button class="control-btn maximize" title="最大化" @click="maximize_window()"></button>
+        <button class="control-btn close" title="关闭" @click="close_window()"></button>
+      </div>
     </div>
-    <div class="window-controls">
-      <button class="control-btn pin" title="置顶" @click="lock_window()">📌</button>
-      <button class="control-btn minimize" title="最小化" @click="minimize_window()"></button>
-      <button class="control-btn maximize" title="最大化" @click="maximize_window()"></button>
-      <button class="control-btn close" title="关闭" @click="close_window()"></button>
-    </div>
+    <main class="container">
+
+      <h1>Welcome to Better Control Panel</h1>
+
+      <div class="row">
+        <a href="https://github.com/yuanair/BetterControlPanel/" target="_blank">
+          <img src="./assets/logo.svg" class="logo vite"/>
+        </a>
+      </div>
+
+      <form class="row" @submit.prevent="greet">
+        <input id="greet-input" v-model="name" placeholder="Enter a name..."/>
+        <button type="submit">Greet</button>
+      </form>
+      <p>{{ greetMsg }}</p>
+    </main>
   </div>
-  <main class="container">
-
-    <h1>Welcome to Tauri + Vue</h1>
-
-    <div class="row">
-      <a href="https://vitejs.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo"/>
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo"/>
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo"/>
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
-
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..."/>
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-  </main>
 </template>
 
 <style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+.logo:hover {
+  filter: drop-shadow(0 0 2em #3a8dfa);
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
+.app-root {
+  display: flex;
+  flex-direction: column;
+
+  background: transparent;
+  width: 100vw;
+  height: 100vh;
 }
 
 [data-tauri-drag-region] {
@@ -98,24 +104,51 @@ async function greet() {
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
+  overflow: hidden;
 
   color: #0f0f0f;
-  background-color: #f6f6f6;
-
+  background: transparent !important;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(1, 1, 1, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(1, 1, 1, 0.3);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
 }
 
 .container {
   margin: 0;
   padding-top: 10vh;
   display: flex;
+  flex: 1;
   flex-direction: column;
   justify-content: center;
   text-align: center;
+  overflow: auto;
 }
 
 .logo {
@@ -123,10 +156,7 @@ async function greet() {
   padding: 1.5em;
   will-change: filter;
   transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
+  user-select: none;
 }
 
 .row {
@@ -164,6 +194,7 @@ button {
 
 button {
   cursor: pointer;
+  color: #3a8dfa;
 }
 
 button:hover {
@@ -186,9 +217,9 @@ button {
 
 .titlebar {
   height: 40px;
-  background: #2d2d2d;
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
-  justify-content: space-between;
+  position: relative;
   align-items: center;
   padding: 0 12px;
   user-select: none;
@@ -199,6 +230,9 @@ button {
   align-items: center;
   gap: 8px;
   color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-icon {
@@ -208,6 +242,8 @@ button {
 
 .window-controls {
   display: flex;
+  position: absolute;
+  right: 8px;
   gap: 8px;
 }
 

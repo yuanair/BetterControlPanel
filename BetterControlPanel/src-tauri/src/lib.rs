@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 use tauri::Manager;
+use window_vibrancy::NSVisualEffectMaterial;
 
 pub mod tray;
 #[tauri::command]
@@ -40,11 +41,33 @@ fn maximize_window(app_handle: tauri::AppHandle) {
     }
 }
 
+#[tauri::command]
+fn window_vibrancy(app_handle: tauri::AppHandle) -> bool {
+    static IS_WINDOW_VIBRANCY: Mutex<bool> = Mutex::new(false);
+    let window = app_handle.get_window("main").unwrap();
+    let mut vibrancy = IS_WINDOW_VIBRANCY.lock().unwrap();
+    if *vibrancy {
+        #[cfg(target_os = "macos")]
+        window_vibrancy::apply_vibrancy(&win, NSVisualEffectMaterial::FullScreenUI).unwrap();
+
+        #[cfg(target_os = "windows")]
+        window_vibrancy::apply_mica(&window, Some(true)).unwrap();
+    } else {
+        #[cfg(target_os = "macos")]
+        window_vibrancy::clear_vibrancy(&win).unwrap();
+
+        #[cfg(target_os = "windows")]
+        window_vibrancy::clear_mica(&window).unwrap();
+    }
+    *vibrancy = !*vibrancy;
+    *vibrancy
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, lock_window, close_window, minimize_window, maximize_window])
+        .invoke_handler(tauri::generate_handler![greet, lock_window, close_window, minimize_window, maximize_window, window_vibrancy])
         .setup(|app| {
             #[cfg(all(desktop))]
             {

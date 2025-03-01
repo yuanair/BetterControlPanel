@@ -1,6 +1,6 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "bettercontrolpanel",
+	"productName": "BetterControlPanel",
 	"version": "0.1.0",
 	"identifier": "com.bettercontrolpanel.app",
 	"build": {
@@ -12,11 +12,12 @@
 	"app": {
 		"windows": [
 			{
-				"title": "bettercontrolpanel",
+				"title": "BetterControlPanel",
 				"width": 800,
 				"height": 600,
 				"fullscreen": false,
 				"dragDropEnabled": true,
+				"transparent": true,
 				"center": true,
 				"resizable": true,
 				"decorations": false
