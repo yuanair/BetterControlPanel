@@ -5,6 +5,7 @@ import {invoke} from "@tauri-apps/api/core";
 const greetMsg = ref("");
 const name = ref("");
 const is_always_on_top = ref(false);
+const is_maximized = ref(false);
 const is_window_vibrancy = ref(false);
 
 async function lock_window() {
@@ -20,7 +21,7 @@ async function minimize_window() {
 }
 
 async function maximize_window() {
-  await invoke("maximize_window");
+  is_maximized.value = await invoke("maximize_window");
 }
 
 async function window_vibrancy() {
@@ -45,7 +46,9 @@ async function greet() {
           <img class="icon" src="./assets/ant-design/ant-design--setting-outlined.svg" alt="settings"/>
         </button>
         <button class="control-btn vibrancy" title="vibrancy" @click="window_vibrancy()">
-          <img class="icon" src="./assets/ant-design/ant-design--pushpin-outlined.svg" alt="pushpin"/>
+          <img v-if="is_window_vibrancy" class="icon" src="./assets/ant-design/ant-design--circle-filled.svg"
+               alt="vibrancy"/>
+          <img v-else class="icon" src="./assets/ant-design/ant-design--circle-outlined.svg" alt="vibrancy"/>
         </button>
         <button class="control-btn pin" title="置顶" @click="lock_window()">
           <img v-if="is_always_on_top" class="icon" src="./assets/ant-design/ant-design--pushpin-filled.svg"
@@ -56,7 +59,9 @@ async function greet() {
           <img class="icon" src="./assets/ant-design/ant-design--minus-outlined.svg" alt="minimize"/>
         </button>
         <button class="control-btn maximize" title="最大化" @click="maximize_window()">
-          <img class="icon" src="./assets/ant-design/ant-design--border-outlined.svg" alt="maximize"/>
+          <img v-if="is_maximized" class="icon" src="./assets/ant-design/ant-design--maximize-outlined.svg"
+               alt="maximize"/>
+          <img v-else class="icon" src="./assets/ant-design/ant-design--border-outlined.svg" alt="maximize"/>
         </button>
         <button class="control-btn close" title="关闭" @click="close_window()">
           <img class="icon" src="./assets/ant-design/ant-design--close-outlined.svg" alt="pushpin"/>
@@ -66,6 +71,7 @@ async function greet() {
     <main class="container">
 
       <h1>Welcome to Better Control Panel</h1>
+      <p>Here is a LaTeX equation: \(E=mc^2\)</p>
 
       <div class="row">
         <a href="https://github.com/yuanair/BetterControlPanel/" target="_blank">

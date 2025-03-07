@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 use tauri::Manager;
-use window_vibrancy::NSVisualEffectMaterial;
 
 pub mod tray;
 #[tauri::command]
@@ -14,7 +13,6 @@ fn lock_window(app_handle: tauri::AppHandle) -> bool {
     let window = app_handle.get_window("main").unwrap();
     let mut always_on_top = WINDOW_ALWAYS_ON_TOP.lock().unwrap();
     *always_on_top = !*always_on_top;
-    println!("always_on_top: {}", *always_on_top);
     window.set_always_on_top(*always_on_top).unwrap();
     *always_on_top
 }
@@ -32,13 +30,14 @@ fn minimize_window(app_handle: tauri::AppHandle) {
 }
 
 #[tauri::command]
-fn maximize_window(app_handle: tauri::AppHandle) {
+fn maximize_window(app_handle: tauri::AppHandle) -> bool {
     let window = app_handle.get_window("main").unwrap();
     if window.is_maximized().unwrap() {
         window.unmaximize().unwrap();
     } else {
         window.maximize().unwrap();
     }
+    window.is_maximized().unwrap()
 }
 
 #[tauri::command]
