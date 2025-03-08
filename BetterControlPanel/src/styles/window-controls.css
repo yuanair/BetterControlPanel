@@ -53,3 +53,27 @@
 .control-btn:hover {
     filter: brightness(1.2);
 }
+
+#minimize:hover {
+    background: rgba(255, 189, 68, 0.2);
+}
+
+#maximize:hover {
+    background: rgba(0, 202, 86, 0.2);
+}
+
+#close:hover {
+    background: rgba(255, 96, 92, 0.2);
+}
+
+#pin:hover {
+    background: rgba(136, 136, 136, 0.2);
+}
+
+#vibrancy:hover {
+    background: rgba(69, 192, 255, 0.2);
+}
+
+#settings:hover {
+    background: rgba(133, 133, 133, 0.2);
+}

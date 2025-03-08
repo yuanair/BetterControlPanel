@@ -6,11 +6,13 @@ const routes = [
     {
         path: '/',
         name: 'welcome',
+        displayName: 'Welcome',
         component: WelcomeView
     },
     {
         path: '/levels',
         name: 'levels',
+        displayName: 'Levels',
         component: () => LevelSelectView
     }
 ]

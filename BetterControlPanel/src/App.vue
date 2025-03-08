@@ -54,28 +54,28 @@ set_window_vibrancy();
         <span>理综迷城</span>
       </div>
       <div class="window-controls">
-        <button class="control-btn settings" title="设置">
+        <button class="control-btn" id="settings" title="设置">
           <img class="icon" src="./assets/ant-design/ant-design--setting-outlined.svg" alt="settings"/>
         </button>
-        <button class="control-btn vibrancy" title="vibrancy" @click="set_window_vibrancy()">
+        <button class="control-btn" id="vibrancy" title="风格" @click="set_window_vibrancy()">
           <img v-if="use_window_vibrancy" class="icon" src="./assets/ant-design/ant-design--circle-filled.svg"
                alt="vibrancy"/>
           <img v-else class="icon" src="./assets/ant-design/ant-design--circle-outlined.svg" alt="vibrancy"/>
         </button>
-        <button class="control-btn pin" title="置顶" @click="lock_window()">
+        <button class="control-btn" id="pin" title="置顶" @click="lock_window()">
           <img v-if="is_always_on_top" class="icon" src="./assets/ant-design/ant-design--pushpin-filled.svg"
                alt="pushpin"/>
           <img v-else class="icon" src="./assets/ant-design/ant-design--pushpin-outlined.svg" alt="pushpin"/>
         </button>
-        <button class="control-btn minimize" title="最小化" @click="minimize_window()">
+        <button class="control-btn " id="minimize" title="最小化" @click="minimize_window()">
           <img class="icon" src="./assets/ant-design/ant-design--minus-outlined.svg" alt="minimize"/>
         </button>
-        <button class="control-btn maximize" title="最大化" @click="maximize_window()">
+        <button class="control-btn" id="maximize" title="最大化" @click="maximize_window()">
           <img v-if="is_maximized" class="icon" src="./assets/ant-design/ant-design--maximize-outlined.svg"
                alt="maximize"/>
           <img v-else class="icon" src="./assets/ant-design/ant-design--border-outlined.svg" alt="maximize"/>
         </button>
-        <button class="control-btn close" title="关闭" @click="close_window()">
+        <button class="control-btn" id="close" title="关闭" @click="close_window()">
           <img class="icon" src="./assets/ant-design/ant-design--close-outlined.svg" alt="pushpin"/>
         </button>
       </div>
@@ -83,6 +83,7 @@ set_window_vibrancy();
     <div class="container">
       <router-view></router-view>
     </div>
+
   </div>
 </template>
 
@@ -161,14 +162,6 @@ set_window_vibrancy();
   overflow: auto;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-  user-select: none;
-}
-
 
 a {
   font-weight: 500;
@@ -216,31 +209,6 @@ button:active {
 input,
 button {
   outline: none;
-}
-
-
-.minimize:hover {
-  background: rgba(255, 189, 68, 0.2);
-}
-
-.maximize:hover {
-  background: rgba(0, 202, 86, 0.2);
-}
-
-.close:hover {
-  background: rgba(255, 96, 92, 0.2);
-}
-
-.pin:hover {
-  background: rgba(136, 136, 136, 0.2);
-}
-
-.vibrancy:hover {
-  background: rgba(69, 192, 255, 0.2);
-}
-
-.settings:hover {
-  background: rgba(133, 133, 133, 0.2);
 }
 
 @media (prefers-color-scheme: dark) {

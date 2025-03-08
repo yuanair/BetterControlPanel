@@ -1,16 +1,35 @@
 <script setup lang="ts">
-import "../utils/mathjax";
-import "mathjax/es5/tex-svg";
 import {onMounted} from "vue";
+import router from "../router";
+import {FlameAnimation} from "../animation/FireAnimation";
 
 onMounted(() => {
   MathJax.typesetPromise();
+  const canvas = document.getElementById('fireCanvas') as HTMLCanvasElement;
+  if (!canvas) {
+    throw new Error('canvas not found');
+  }
+  const flame = new FlameAnimation(canvas);
+
+// 控制接口
+//   const intensityControl = document.getElementById('intensity') as HTMLInputElement;
+//   intensityControl.addEventListener('input', () => {
+//     flame.createParticles(Number(intensityControl.value));
+//   });
+//
+//   document.getElementById('colorToggle')!.addEventListener('click', () => {
+//     flame.toggleColorMode();
+//   });
+  flame.createParticles(Number(500));
+
+// 启动动画
+  flame.start();
 })
 
 const levels = [
-  {id: 1, unlocked: true},
-  {id: 2, unlocked: false},
-  {id: 3, unlocked: false}
+  {id: 1, name: "数学", unlocked: true},
+  {id: 2, name: "物理", unlocked: false},
+  {id: 3, name: "化学", unlocked: false}
 ];
 
 </script>
@@ -26,14 +45,16 @@ const levels = [
         @click="0/*selectLevel(level)*/"
         :disabled="!level.unlocked"
     >
-      关卡 {{ level.id }}
+      {{ level.name }}
     </button>
   </div>
-  <router-link to="/">
-    <button class="back-button">返回</button>
-  </router-link>
+  <button @click="router.push('/')">返回</button>
+  <canvas id="fireCanvas"></canvas>
+
 </template>
 
 <style scoped>
-
+canvas {
+  cursor: pointer;
+}
 </style>
