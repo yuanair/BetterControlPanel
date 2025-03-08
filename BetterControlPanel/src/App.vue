@@ -53,7 +53,7 @@ set_window_vibrancy();
     <div class="titlebar" data-tauri-drag-region>
       <div class="app-info">
         <img src="./assets/logo.svg" class="app-icon" alt="logo">
-        <span>Better Control Panel</span>
+        <span>数学迷城</span>
       </div>
       <div class="window-controls">
         <button class="control-btn settings" title="设置">
@@ -89,8 +89,8 @@ set_window_vibrancy();
     </div>
     <main class="container">
 
-      <h1>Welcome to Better Control Panel</h1>
-      <p>Here is a LaTeX equation: \(E=mc^2\)</p>
+      <h1>数学迷城</h1>
+      <p>LaTeX: \(E=mc^2\)</p>
 
       <div class="row">
         <a href="https://github.com/yuanair/BetterControlPanel/" target="_blank">
