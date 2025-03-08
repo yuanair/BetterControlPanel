@@ -1,7 +1,14 @@
 .icon {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: 0.75s;
+    display: flex;
+    height: 16px;
+    width: 16px;
     user-select: none;
+    -webkit-user-select: none;
+    filter: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .icon {
+        filter: invert(70%);
+    }
 }

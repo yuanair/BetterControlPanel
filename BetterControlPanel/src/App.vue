@@ -8,7 +8,6 @@ const is_always_on_top = ref(true);
 const is_maximized = ref(true);
 const use_window_vibrancy = ref(false);
 
-
 async function lock_window() {
   is_always_on_top.value = !is_always_on_top.value;
   await app_window.setAlwaysOnTop(is_always_on_top.value);
@@ -40,7 +39,6 @@ async function set_window_vibrancy() {
   }
 }
 
-
 // 初始化
 lock_window();
 maximize_window();
@@ -53,21 +51,16 @@ set_window_vibrancy();
     <div class="titlebar" data-tauri-drag-region>
       <div class="app-info">
         <img src="./assets/logo.svg" class="app-icon" alt="logo">
-        <span>数学迷城</span>
+        <span>理综迷城</span>
       </div>
       <div class="window-controls">
         <button class="control-btn settings" title="设置">
           <img class="icon" src="./assets/ant-design/ant-design--setting-outlined.svg" alt="settings"/>
         </button>
         <button class="control-btn vibrancy" title="vibrancy" @click="set_window_vibrancy()">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-            <path :class="{ active: use_window_vibrancy }" id="svg_1"
-                  d="m512,64c-247.4,0 -448,200.6 -448,448s200.6,448 448,448s448,-200.6 448,-448s-200.6,-448 -448,-448m0,820c-205.4,0 -372,-166.6 -372,-372s166.6,-372 372,-372s372,166.6 372,372s-166.6,372 -372,372"
-                  fill="currentColor"/>
-          </svg>
-          <!--          <img v-if="use_window_vibrancy" class="icon" src="./assets/ant-design/ant-design&#45;&#45;circle-filled.svg"-->
-          <!--               alt="vibrancy"/>-->
-          <!--          <img v-else class="icon" src="./assets/ant-design/ant-design&#45;&#45;circle-outlined.svg" alt="vibrancy"/>-->
+          <img v-if="use_window_vibrancy" class="icon" src="./assets/ant-design/ant-design--circle-filled.svg"
+               alt="vibrancy"/>
+          <img v-else class="icon" src="./assets/ant-design/ant-design--circle-outlined.svg" alt="vibrancy"/>
         </button>
         <button class="control-btn pin" title="置顶" @click="lock_window()">
           <img v-if="is_always_on_top" class="icon" src="./assets/ant-design/ant-design--pushpin-filled.svg"
@@ -87,24 +80,14 @@ set_window_vibrancy();
         </button>
       </div>
     </div>
-    <main class="container">
-
-      <h1>数学迷城</h1>
-      <p>LaTeX: \(E=mc^2\)</p>
-
-      <div class="row">
-        <a href="https://github.com/yuanair/BetterControlPanel/" target="_blank">
-          <img src="./assets/logo.svg" class="logo vite" alt="logo"/>
-        </a>
-      </div>
-    </main>
+    <div class="container">
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.logo:hover {
-  filter: drop-shadow(0 0 2em #3a8dfa);
-}
+
 
 .app-root {
   display: flex;
@@ -114,17 +97,9 @@ set_window_vibrancy();
   width: 100vw;
   height: 100vh;
 }
-
-[data-tauri-drag-region] {
-  -webkit-app-region: drag;
-  user-select: none;
-}
-
-.window-controls button {
-  -webkit-app-region: no-drag;
-}
-
 </style>
+<style scoped src="./styles/window-controls.css"></style>
+<style scoped src="./styles/icon.css"></style>
 <style>
 
 * {
@@ -139,6 +114,7 @@ set_window_vibrancy();
   line-height: 24px;
   font-weight: 400;
   overflow: hidden;
+  box-sizing: border-box;
 
   color: #0f0f0f;
   background: transparent !important;
@@ -193,13 +169,6 @@ set_window_vibrancy();
   user-select: none;
 }
 
-.icon {
-  display: flex;
-  height: 16px;
-  width: 16px;
-  user-select: none;
-  -webkit-user-select: none;
-}
 
 a {
   font-weight: 500;
@@ -249,52 +218,6 @@ button {
   outline: none;
 }
 
-.titlebar {
-  height: 32px;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  position: relative;
-  padding: 0 12px;
-  user-select: none;
-}
-
-.app-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: white;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.app-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.window-controls {
-  display: flex;
-  position: absolute;
-  right: 0;
-}
-
-.control-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 0;
-  padding: 8px;
-  box-shadow: none;
-  background-color: transparent;
-  align-items: center;
-  display: flex;
-  transition: all 0.2s;
-}
-
-.control-btn:hover {
-  filter: brightness(1.2);
-}
 
 .minimize:hover {
   background: rgba(255, 189, 68, 0.2);
@@ -326,10 +249,6 @@ button {
     background-color: #2f2f2f;
   }
 
-  .icon {
-    filter: invert(70%);
-  }
-
   a:hover {
     color: #24c8db;
   }
@@ -342,10 +261,6 @@ button {
 
   button:active {
     background-color: #0f0f0f69;
-  }
-
-  .icon {
-    fill: #ffffff;
   }
 
 }

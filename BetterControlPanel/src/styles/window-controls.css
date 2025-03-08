@@ -1,0 +1,55 @@
+[data-tauri-drag-region] {
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
+.window-controls button {
+    -webkit-app-region: no-drag;
+}
+
+.titlebar {
+    height: 32px;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    position: relative;
+    padding: 0 12px;
+    user-select: none;
+}
+
+.app-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.window-controls {
+    display: flex;
+    position: absolute;
+    right: 0;
+}
+
+.control-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 0;
+    padding: 8px;
+    box-shadow: none;
+    background-color: transparent;
+    align-items: center;
+    display: flex;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    filter: brightness(1.2);
+}

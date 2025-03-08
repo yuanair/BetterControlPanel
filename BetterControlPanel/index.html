@@ -2,33 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Tauri + Vue + Typescript App</title>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script src="src/MathJax-2.7.7/MathJax.js?config=TeX-AMS_HTML" async></script>
+    <title>理综迷城</title>
 </head>
 
 <body>
 <div id="app"></div>
 <script type="module" src="/src/main.ts"></script>
-<script type="text/x-mathjax-config;executed=true">
-    window.MathJax.Hub.Config({
-        showProcessingMessages: false, //关闭js加载过程信息
-        messageStyle: "none", //不显示信息
-        jax: ["input/TeX", "output/HTML-CSS"],
-        tex2jax: {
-            inlineMath: [["$", "$"], ["\\(", "\\)"]], //行内公式选择符
-            displayMath: [["$$", "$$"], ["\\[", "\\]"]], //段内公式选择符
-            skipTags: ["script", "noscript", "style", "textarea", "pre", "code", "a"] //避开某些标签
-        },
-        "HTML-CSS": {
-            availableFonts: ["STIX", "TeX"], //可选字体
-            showMathMenu: false //关闭右击菜单显示
-        }
-    });
-    //下面第三个参数可以不写，默认对整个html内的latex进行翻译
-    window.MathJax.Hub.Queue(["Typeset", MathJax.Hub, document.getElementsByClassName("ck-content")]);
-</script>
 </body>
 </html>
