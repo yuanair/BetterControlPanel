@@ -1,37 +1,51 @@
 <script setup lang="ts">
 import {ref} from "vue";
 import {invoke} from "@tauri-apps/api/core";
+import {getCurrentWindow} from '@tauri-apps/api/window'
 
-const greetMsg = ref("");
-const name = ref("");
-const is_always_on_top = ref(false);
-const is_maximized = ref(false);
-const is_window_vibrancy = ref(false);
+const app_window = getCurrentWindow();
+const is_always_on_top = ref(true);
+const is_maximized = ref(true);
+const use_window_vibrancy = ref(false);
+
 
 async function lock_window() {
-  is_always_on_top.value = await invoke("lock_window");
+  is_always_on_top.value = !is_always_on_top.value;
+  await app_window.setAlwaysOnTop(is_always_on_top.value);
 }
 
-async function close_window() {
-  await invoke("close_window");
+async function close_window(this: Window) {
+  await app_window.close();
 }
 
 async function minimize_window() {
-  await invoke("minimize_window");
+  await app_window.minimize();
 }
 
 async function maximize_window() {
-  is_maximized.value = await invoke("maximize_window");
+  is_maximized.value = !is_maximized.value;
+  if (is_maximized.value) {
+    await app_window.maximize();
+  } else {
+    await app_window.unmaximize();
+  }
 }
 
-async function window_vibrancy() {
-  is_window_vibrancy.value = await invoke("window_vibrancy");
+async function set_window_vibrancy() {
+  use_window_vibrancy.value = !use_window_vibrancy.value;
+  if (use_window_vibrancy.value) {
+    await invoke("apply_window_vibrancy", {app_window: app_window});
+  } else {
+    await invoke("clear_window_vibrancy", {app_window: app_window});
+  }
 }
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", {name: name.value});
-}
+
+// 初始化
+lock_window();
+maximize_window();
+set_window_vibrancy();
+
 </script>
 
 <template>
@@ -45,10 +59,15 @@ async function greet() {
         <button class="control-btn settings" title="设置">
           <img class="icon" src="./assets/ant-design/ant-design--setting-outlined.svg" alt="settings"/>
         </button>
-        <button class="control-btn vibrancy" title="vibrancy" @click="window_vibrancy()">
-          <img v-if="is_window_vibrancy" class="icon" src="./assets/ant-design/ant-design--circle-filled.svg"
-               alt="vibrancy"/>
-          <img v-else class="icon" src="./assets/ant-design/ant-design--circle-outlined.svg" alt="vibrancy"/>
+        <button class="control-btn vibrancy" title="vibrancy" @click="set_window_vibrancy()">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+            <path :class="{ active: use_window_vibrancy }" id="svg_1"
+                  d="m512,64c-247.4,0 -448,200.6 -448,448s200.6,448 448,448s448,-200.6 448,-448s-200.6,-448 -448,-448m0,820c-205.4,0 -372,-166.6 -372,-372s166.6,-372 372,-372s372,166.6 372,372s-166.6,372 -372,372"
+                  fill="currentColor"/>
+          </svg>
+          <!--          <img v-if="use_window_vibrancy" class="icon" src="./assets/ant-design/ant-design&#45;&#45;circle-filled.svg"-->
+          <!--               alt="vibrancy"/>-->
+          <!--          <img v-else class="icon" src="./assets/ant-design/ant-design&#45;&#45;circle-outlined.svg" alt="vibrancy"/>-->
         </button>
         <button class="control-btn pin" title="置顶" @click="lock_window()">
           <img v-if="is_always_on_top" class="icon" src="./assets/ant-design/ant-design--pushpin-filled.svg"
@@ -78,12 +97,6 @@ async function greet() {
           <img src="./assets/logo.svg" class="logo vite" alt="logo"/>
         </a>
       </div>
-
-      <form class="row" @submit.prevent="greet">
-        <input id="greet-input" v-model="name" placeholder="Enter a name..."/>
-        <button type="submit">Greet</button>
-      </form>
-      <p>{{ greetMsg }}</p>
     </main>
   </div>
 </template>
@@ -188,15 +201,6 @@ async function greet() {
   -webkit-user-select: none;
 }
 
-.icon path {
-  fill: white;
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
 a {
   font-weight: 500;
   color: #646cff;
@@ -243,10 +247,6 @@ button:active {
 input,
 button {
   outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
 }
 
 .titlebar {
@@ -297,27 +297,27 @@ button {
 }
 
 .minimize:hover {
-  background: #ffbd44;
+  background: rgba(255, 189, 68, 0.2);
 }
 
 .maximize:hover {
-  background: #00ca56;
+  background: rgba(0, 202, 86, 0.2);
 }
 
 .close:hover {
-  background: #ff605c;
+  background: rgba(255, 96, 92, 0.2);
 }
 
 .pin:hover {
-  background: #888;
+  background: rgba(136, 136, 136, 0.2);
 }
 
 .vibrancy:hover {
-  background: #45c0ff;
+  background: rgba(69, 192, 255, 0.2);
 }
 
 .settings:hover {
-  background: #858585;
+  background: rgba(133, 133, 133, 0.2);
 }
 
 @media (prefers-color-scheme: dark) {
