@@ -1,10 +1,11 @@
 use std::sync::Mutex;
-use num::{Complex, Rational64};
-use log::info;
-use crate::game::QuadraticEquation;
+use rand::Rng;
+use crate::game::{Game, QuadraticEquation};
 
 pub mod tray;
 pub mod game;
+
+static GAME: Mutex<Option<Game>> = Mutex::new(None);
 
 #[tauri::command]
 fn apply_window_vibrancy(app_handle: tauri::AppHandle, app_window: tauri::Window) {
@@ -25,27 +26,54 @@ fn clear_window_vibrancy(app_handle: tauri::AppHandle, app_window: tauri::Window
 }
 
 #[tauri::command]
-fn create_quadratic_equation(x1: Complex<Rational64>, x2: Complex<Rational64>, a: Rational64) -> QuadraticEquation {
-    QuadraticEquation::from_x_and_a(x1, x2, a)
+fn create_quadratic_equation() -> String {
+    let mut game = GAME.lock().unwrap();
+    let QuadraticEquation { a, b, c } = game.as_mut().unwrap().create_quadratic_equation();
+    format!("{}x^2 {:+ }x {:+ } = 0", a, b, c)
 }
 
-// #[tauri::command]
-// fn is_right(equation: QuadraticEquation, x1: Complex<Rational64>, x2: Complex<Rational64>) -> bool {
-//     println!("equation: {:?}, x1: {:?}, x2: {:?}", equation, x1, x2);
-//     equation.calculate() == (x1, x2)
-// }
-//
-// #[tauri::command]
-// fn get_right(equation: QuadraticEquation) -> (Complex<Rational64>, Complex<Rational64>) {
-//     equation.calculate()
-// }
+#[tauri::command]
+fn is_right(x1: &str, x2: &str) -> (bool, String) {
+    let mut game = GAME.lock().unwrap();
+    let equation = game.as_ref().unwrap().current_question();
+    println!("equation: {:?}, x1: {:?}, x2: {:?}", equation, x1, x2);
+    let x1: i64 = match x1.parse() {
+        Ok(x) => x,
+        Err(e) => return (false, format!("错误的输入：{}", e)),
+    };
+    let x2: i64 = match x2.parse() {
+        Ok(x) => x,
+        Err(e) => return (false, format!("错误的输入：{}", e)),
+    };
+    if let Some(equation) = equation {
+        match equation.calculate() {
+            Some((x1_result, x2_result)) => {
+                let result = x1_result == x1 && x2_result == x2 || x1_result == x2 && x2_result == x1;
+                (result, if result { "完全正确！".to_string() } else { "结果错误".to_string() })
+            }
+            None => (false, "无实数根".to_string()),
+        }
+    } else {
+        (false, "当前没有要解决的问题".to_string())
+    }
+}
+
+#[tauri::command]
+fn get_right() -> Option<(i64, i64)> {
+    let mut game = GAME.lock().unwrap();
+    let equation = game.as_ref()?.current_question()?;
+    equation.calculate()
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![apply_window_vibrancy, clear_window_vibrancy, create_quadratic_equation])
+        .invoke_handler(tauri::generate_handler![apply_window_vibrancy, clear_window_vibrancy, create_quadratic_equation, is_right, get_right])
         .setup(|app| {
+            let game = Game::new();
+            let mut game_mutex = GAME.lock().unwrap();
+            *game_mutex = Some(game);
             #[cfg(all(desktop))]
             {
                 let handle = app.handle();

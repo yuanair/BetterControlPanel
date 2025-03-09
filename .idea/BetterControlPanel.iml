@@ -5,6 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$/BetterControlPanel/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/BetterControlPanel/src-tauri/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test_macro/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/BetterControlPanel/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/BetterControlPanel/src-tauri/target" />

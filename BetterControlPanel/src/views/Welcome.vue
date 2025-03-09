@@ -8,31 +8,37 @@ onMounted(() => {
 </script>
 
 <template>
+  <a class="logo_outer" href="https://github.com/yuanair/BetterControlPanel/tree/MathematicalMaze"
+     target="_blank">
+    <img src="../assets/logo.svg" class="logo" alt="logo"/>
+  </a>
   <h1>理综迷城</h1>
   <p>
     $$ y=ax^2+bx+c\quad(a\neq0) $$
     $$ E=mc^2 $$
     $$ \ce{Cl2 + H2O<=> HCl + HClO} $$
   </p>
-
-  <div class="row">
-    <a href="https://github.com/yuanair/BetterControlPanel/tree/MathematicalMaze" target="_blank">
-      <img src="../assets/logo.svg" class="logo vite" alt="logo"/>
-    </a>
-  </div>
   <button @click="$router.push('/levels')">开始冒险</button>
 </template>
 
 <style scoped>
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 100%;
+  width: auto;
+  align-self: center;
   will-change: filter;
   transition: 0.75s;
   user-select: none;
 }
 
+.logo_outer {
+  display: flex;
+  align-self: center;
+  height: 10em;
+  width: 10em;
+}
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #3a8dfa);
+  filter: drop-shadow(0 0 5px #3a8dfa);
 }
 </style>
