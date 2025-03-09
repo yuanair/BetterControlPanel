@@ -1,5 +1,7 @@
 use std::sync::Mutex;
 use rand::Rng;
+use tauri::Manager;
+use tauri::path::BaseDirectory;
 use crate::game::{Game, QuadraticEquation};
 
 pub mod tray;
@@ -65,11 +67,22 @@ fn get_right() -> Option<(i64, i64)> {
     equation.calculate()
 }
 
+#[tauri::command]
+fn run_game(app_handle: tauri::AppHandle) {
+    let resource_path = app_handle.path().resolve("resource/", BaseDirectory::Resource).unwrap();
+    #[cfg(windows)]
+    {
+        let mut path = std::path::PathBuf::from(resource_path);
+        path.push("ProjectA.exe");
+        std::process::Command::new(path).spawn().unwrap();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![apply_window_vibrancy, clear_window_vibrancy, create_quadratic_equation, is_right, get_right])
+        .invoke_handler(tauri::generate_handler![apply_window_vibrancy, clear_window_vibrancy, create_quadratic_equation, is_right, get_right, run_game])
         .setup(|app| {
             let game = Game::new();
             let mut game_mutex = GAME.lock().unwrap();

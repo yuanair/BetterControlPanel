@@ -6,6 +6,7 @@
         <entryData>
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/MathJax-2.7.7" />
+            <path value="file://$PROJECT_DIR$/BetterControlPanel/resource" />
           </resourceRoots>
         </entryData>
       </entry>
