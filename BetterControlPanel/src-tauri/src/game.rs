@@ -41,7 +41,7 @@ impl QuadraticEquation {
                 let x = -self.b / (2 * self.a);
                 Some((x, x))
             }
-            std::i64::MIN..0 => {
+            i64::MIN..0 => {
                 None
             }
             _ => {

@@ -18,10 +18,13 @@ fn main() {
         name: "Alice".to_string(),
         email: "alice@example.com".to_string(),
     };
-    let user2 = User2(1,"Alice".to_string(),"alice@example.com".to_string());
+    let user2 = User2(1, "Alice".to_string(), "alice@example.com".to_string());
     let user3 = User3;
-    
+
     user.visit_fields();
     user2.visit_fields();
     user3.visit_fields();
 }
+
+
+

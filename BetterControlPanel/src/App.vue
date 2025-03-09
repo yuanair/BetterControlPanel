@@ -321,16 +321,16 @@ export default {
     const formulasHtml = formulas.map<string>(formula => {
       return MathJax.tex2chtml(formula, {em: 12, ex: 6, display: false}).outerHTML
     });
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 5; i++) {
       let track = document.createElement('div');
       track.classList.add('track');
       track.id = `track${i}`;
-      for (let j = 0; j < 20; j++) {
+      track.style.top = `${(i % 2) * 200}px`;
+      for (let j = 0; j < 5; j++) {
         const elem = document.createElement('span');
         elem.classList.add('formula');
         track.appendChild(elem);
         elem.innerHTML = formulasHtml[j % 5];
-        elem.style.top = `${(j % 2) * 200}px`;
       }
       container.appendChild(track);
 
