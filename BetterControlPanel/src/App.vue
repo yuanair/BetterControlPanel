@@ -3,6 +3,7 @@ import {ref} from "vue";
 import {invoke} from "@tauri-apps/api/core";
 import {getCurrentWindow} from '@tauri-apps/api/window'
 
+
 const app_window = getCurrentWindow();
 const is_always_on_top = ref(true);
 const is_maximized = ref(true);
@@ -81,7 +82,8 @@ set_window_vibrancy();
       </div>
     </div>
     <div class="container">
-      <router-view></router-view>
+      <div class="background-formulas" ref="formulaContainer"></div>
+      <router-view id="container-view"></router-view>
     </div>
 
   </div>
@@ -234,3 +236,105 @@ button {
 }
 
 </style>
+<style scoped>
+.logo {
+  height: 100%;
+  width: auto;
+  align-self: center;
+  will-change: filter;
+  transition: 0.75s;
+  user-select: none;
+}
+
+.logo_outer {
+  display: flex;
+  align-self: center;
+  height: 10em;
+  width: 10em;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 5px #3a8dfa);
+}
+
+.background-formulas {
+  position: fixed;
+  width: 100vw; /* 扩大容器范围 */
+  height: 100vh;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+</style>
+
+<style>
+.track {
+  position: absolute;
+  width: 100%;
+  transform: rotate(45deg);
+  transform-origin: center; /* 确保旋转中心正确 */
+  margin: 10vh 0; /* 增加垂直间距 */
+}
+
+.formula {
+  white-space: nowrap;
+  font-size: 1.2rem;
+  color: rgba(0, 0, 0, 0.15);
+  padding: 15px 30px;
+  display: inline-block;
+  position: relative;
+}
+
+.formula:nth-child(odd) {
+  z-index: 1;
+  filter: brightness(0.9); /* 创建深度层次 */
+  animation: formulaSlide 10s linear infinite;
+}
+
+.formula:nth-child(even) {
+  z-index: 0;
+  animation: formulaSlide 10s linear infinite reverse;
+  opacity: 0.8; /* 降低偶数层透明度 */
+}
+
+@keyframes formulaSlide {
+  0% {
+    transform: translateX(-200%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+</style>
+<script lang="ts">
+export default {
+  mounted() {
+    const container = this.$refs.formulaContainer as HTMLElement;
+    const formulas = [
+      '\\sin(x) + \\cos(y) = 1',
+      '\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}',
+      '\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}',
+      'F = ma',
+      '\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}'
+    ];
+    const formulasHtml = formulas.map<string>(formula => {
+      return MathJax.tex2chtml(formula, {em: 12, ex: 6, display: false}).outerHTML
+    });
+    for (let i = 0; i < 20; i++) {
+      let track = document.createElement('div');
+      track.classList.add('track');
+      track.id = `track${i}`;
+      for (let j = 0; j < 20; j++) {
+        const elem = document.createElement('span');
+        elem.classList.add('formula');
+        track.appendChild(elem);
+        elem.innerHTML = formulasHtml[j % 5];
+        elem.style.top = `${(j % 2) * 200}px`;
+      }
+      container.appendChild(track);
+
+    }
+  }
+};
+</script>

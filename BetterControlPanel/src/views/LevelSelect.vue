@@ -1,3 +1,4 @@
+/* eslint-disable */
 <script setup lang="ts">
 import {onMounted} from "vue";
 import router from "../router";
@@ -9,8 +10,7 @@ onMounted(() => {
 const levels = [
   {id: "Math", name: "数学", unlocked: true},
   {id: "Physics", name: "物理", unlocked: true},
-  {id: "Chemistry", name: "化学", unlocked: true},
-  {id: "Test", name: "测试", unlocked: true}
+  {id: "Chemistry", name: "化学", unlocked: true}
 ];
 
 </script>

@@ -7,11 +7,13 @@ use tauri::{
 
 pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
     let quit_i = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let edit_i = MenuItem::with_id(app, "edit_file", "编辑", true, None::<&str>)?;
-    let new_i = MenuItem::with_id(app, "new_file", "添加", true, None::<&str>)?;
-    let a = Submenu::with_id_and_items(app, "File", "文件", true, &[&new_i, &edit_i])?;
+    // let edit_i = MenuItem::with_id(app, "edit_file", "编辑", true, None::<&str>)?;
+    // let new_i = MenuItem::with_id(app, "new_file", "添加", true, None::<&str>)?;
+    // let a = Submenu::with_id_and_items(app, "File", "文件", true, &[&new_i, &edit_i])?;
     // 分割线
-    let menu = Menu::with_items(app, &[&a, &quit_i])?;
+    // let menu = Menu::with_items(app, &[&a, &quit_i])?;
+    // 分割线
+    let menu = Menu::with_items(app, &[&quit_i])?;
 
     let _ = TrayIconBuilder::with_id("tray")
         .icon(app.default_window_icon().unwrap().clone())

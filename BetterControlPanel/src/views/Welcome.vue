@@ -1,10 +1,10 @@
+/* eslint-disable */
 <script setup lang="ts">
 import {onMounted} from "vue";
 
 onMounted(() => {
   MathJax.typesetPromise();
 });
-
 </script>
 
 <template>
@@ -41,4 +41,5 @@ onMounted(() => {
 .logo:hover {
   filter: drop-shadow(0 0 5px #3a8dfa);
 }
+
 </style>
