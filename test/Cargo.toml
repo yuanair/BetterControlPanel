@@ -1,0 +1,11 @@
+[package]
+name = "test"
+version = "0.1.0"
+authors = ["https://github.com/yuanair/"]
+edition = "2024"
+
+[dependencies]
+num = { version = "0.4.3", features = ["serde"] }
+log = {version = "0.4.26", features = []}
+
+test_macro = { path = "../test_macro" }
