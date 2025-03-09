@@ -14,10 +14,4 @@ impl ParticleEffectEngine {
     pub fn add_particle(&mut self, particle: Box<dyn Particle>) {
         self.particles.push(particle);
     }
-
-    pub fn update(&mut self, delta_time: f32) {
-        for particle in &mut self.particles {
-            particle.update(delta_time);
-        }
-    }
 }

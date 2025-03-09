@@ -4,22 +4,26 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>理综迷城</title>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-          tex2jax: {
-            inlineMath: [ ['$','$'], ['\\(','\\)'] ],
-            displayMath: [ ['$$','$$'], ['\$$','\$$'] ],
-            processEscapes: true,
-          },
-          options: {
+    <script>
+        MathJax = {
+            loader: {
+                load: ['[tex]/mhchem']
+            },
+            chtml: {mtextInheritFont: true},   // 确保文本继承字体
+            tex: {
+                packages: {'[+]': ['mhchem']},
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\$$', '\$$']],
+            },
+            options: {
+                enableMenu: false,      // 彻底禁用菜单系统
                 menuOptions: {
                     settings: {
-                        zoom: 'Click',      // 禁用缩放菜单
-                        context: 'Browser'   // 限制右键内容
+                        zoom: 'None',       // 禁用缩放
                     }
                 }
             },
-        });
+        };
     </script>
 
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
