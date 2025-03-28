@@ -2,6 +2,8 @@
 name = "better_control_panel"
 version = "0.1.0"
 edition = "2024"
+description = "better control panel"
+license-file = "../LICENSE"
 
 [dependencies]
 interprocess = "2.2.3"

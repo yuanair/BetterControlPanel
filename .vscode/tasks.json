@@ -52,5 +52,19 @@
 			],
 			"label": "BCP: build release"
 		},
+		{
+			"type": "cargo",
+			"command": "publish",
+			"args": [
+				"--package",
+				"better_control_panel",
+				"--registry",
+				"crates-io"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "BCP: publish"
+		},
 	]
 }
