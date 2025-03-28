@@ -2,36 +2,60 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"script": "dev",
-			"path": "BetterControlPanel",
-			"problemMatcher": [],
-			"label": "npm_dev_server - BetterControlPanel"
-		},
-		{
-			"type": "npm",
-			"script": "tauri build",
-			"path": "BetterControlPanel",
-			"problemMatcher": [],
-			"label": "release - BetterControlPanel"
-		},
-		{
 			"type": "cargo",
-			"command": "run",
-			"args": ["--no-default-features"],
+			"command": "doc",
+			"args": [
+				"--no-deps"
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
-			"label": "cargo_run"
+			"label": "cargo doc"
 		},
 		{
 			"type": "cargo",
+			"command": "doc",
+			"args": [
+				"--no-deps",
+				"--open"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "cargo doc --open"
+		},
+		{
+			"type": "cargo",
+			"group": "build",
 			"command": "build",
-			"args": ["--no-default-features"],
+			"env": {
+				"RUST_LOG": "info"
+			},
+			"args": [
+				"--bin",
+				"BetterControlPanel"
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
-            "label": "build",
-        }
+			"label": "BCP: build debug"
+		},
+		{
+			"type": "cargo",
+			"group": "build",
+			"command": "build",
+			"env": {
+				"RUST_LOG": "info"
+			},
+			"args": [
+				"--release",
+				"--bin",
+				"BetterControlPanel"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "BCP: build release"
+		}
 	]
 }
