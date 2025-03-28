@@ -7,11 +7,11 @@ name = "BetterControlPanel"
 version = "0.1.0"
 dependencies = [
  "better_control_panel",
+ "clap",
  "eframe",
  "egui_extras",
  "env_logger",
  "log",
- "single-instance",
 ]
 
 [[package]]
@@ -21,7 +21,6 @@ dependencies = [
  "better_control_panel",
  "clap",
  "rhai",
- "single-instance",
 ]
 
 [[package]]

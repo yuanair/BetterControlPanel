@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "启动(Windows)",
+            "name": "BCP: 启动(Windows)",
             "preLaunchTask": "BCP: build debug",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe",
+            "program": "${workspaceFolder}/target/debug/BetterControlPanel.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/target/debug",
@@ -23,7 +23,28 @@
                     "value": "1"
                 }
             ],
-            "console": "internalConsole"
+            "console": "externalTerminal"
+        },
+        {
+            "name": "BCP-Console: 启动(Windows)",
+            "preLaunchTask": "BCP: build debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/BetterControlPanel-Console.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/target/debug",
+            "environment": [
+                {
+                    "name": "RUST_LOG",
+                    "value": "info"
+                },
+                {
+                    "name": "RUST_BACKTRACE",
+                    "value": "1"
+                }
+            ],
+            "console": "externalTerminal"
         },
     ]
 }

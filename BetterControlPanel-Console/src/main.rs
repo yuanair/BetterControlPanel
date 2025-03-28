@@ -1,5 +1,4 @@
 use clap::Parser;
-use single_instance::SingleInstance;
 
 /// Better Control Panel Console
 #[derive(Debug, Parser)]
@@ -7,20 +6,23 @@ use single_instance::SingleInstance;
 struct Cli {
     /// The script to run
     #[arg(short, long)]
-    script: String,
+    script: Option<String>,
 }
 
 fn main() {
     let args = Cli::parse();
     println!("{:?}", args);
-    let instance =
-        SingleInstance::new(env!("CARGO_PKG_NAME")).expect("Failed to create single instance");
-    if !instance.is_single() {
-        eprintln!("程序已在运行，请勿重复启动！");
-        return;
-    }
+    let (tx, _join_handle, _instance) =
+        better_control_panel::ipc::startup(better_control_panel::app_id!()).unwrap();
     println!("程序启动成功，单例运行中...");
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    for message in tx {
+        let args = match Cli::try_parse_from(message.split_ascii_whitespace()) {
+            Ok(args) => args,
+            Err(e) => {
+                eprintln!("解析命令行参数失败：{}", e);
+                continue;
+            }
+        };
+        println!("收到来自其他程序的消息：{:?}", args);
     }
 }

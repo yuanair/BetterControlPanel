@@ -40,6 +40,7 @@ pub fn startup(
 > {
     let instance = single_instance::SingleInstance::new(&app_id)?;
     if !instance.is_single() {
+        println!("Another instance is already running. Send args to it...");
         send_args_to_server(&app_id)?;
         std::process::exit(0);
     }

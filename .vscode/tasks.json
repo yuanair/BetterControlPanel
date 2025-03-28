@@ -31,10 +31,7 @@
 			"env": {
 				"RUST_LOG": "info"
 			},
-			"args": [
-				"--bin",
-				"BetterControlPanel"
-			],
+			"args": [],
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -49,13 +46,11 @@
 			},
 			"args": [
 				"--release",
-				"--bin",
-				"BetterControlPanel"
 			],
 			"problemMatcher": [
 				"$rustc"
 			],
 			"label": "BCP: build release"
-		}
+		},
 	]
 }

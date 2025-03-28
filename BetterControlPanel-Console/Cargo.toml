@@ -7,4 +7,3 @@ edition = "2024"
 better_control_panel = { version = "0.1.0", path = "../better_control_panel" }
 clap = { version = "4.5.34", features = ["derive"] }
 rhai = "1.21.0"
-single-instance = "0.3.3"
