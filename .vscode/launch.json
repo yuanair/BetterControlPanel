@@ -5,36 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-			"name": "启动(Windows)", 
-			"preLaunchTask": "build", 
-			"type": "cppvsdbg", 
-			"request": "launch", 
-			"program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe", 
-			"args": [], 
-			"stopAtEntry": false, 
-			"cwd": "${workspaceFolder}", 
-			"environment": [], 
-			"externalConsole": false 
-        }, 
-        { 
-            "name": "启动(gdb)", 
-            "type": "cppdbg", 
-            "request": "launch", 
-            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe", 
-            "args": [], 
-            "stopAtEntry": false, 
-            "cwd": "${workspaceFolder}", 
-            "environment": [], 
-            "externalConsole": false, 
-            "MIMode": "gdb", 
-            "miDebuggerPath": "这里填GDB所在的目录", 
-            "setupCommands": [ 
-                { 
-                    "description": "为 gdb 启用整齐打印", 
-                    "text": "-enable-pretty-printing", 
-                    "ignoreFailures": true 
-                } 
-            ] 
+            "name": "启动(Windows)",
+            "preLaunchTask": "build",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/target/debug",
+            "environment": [
+                {
+                    "name": "RUST_LOG",
+                    "value": "info"
+                },
+                {
+                    "name": "RUST_BACKTRACE",
+                    "value": "1"
+                }
+            ],
+            "externalConsole": false
         }
     ]
 }
