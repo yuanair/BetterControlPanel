@@ -1,5 +1,6 @@
 use std::{
-    io::{Read, Write},
+    f32::consts::E,
+    io::{self, BufRead, BufReader, Read, Write},
     sync::mpsc,
     thread::{self, JoinHandle},
 };
@@ -27,31 +28,69 @@ macro_rules! app_id {
         )
     };
 }
-/// startup
-pub fn startup(
-    app_id: String,
-) -> Result<
-    (
-        mpsc::Receiver<String>,
-        JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>,
-        SingleInstance,
-    ),
-    Box<dyn std::error::Error>,
-> {
-    let instance = single_instance::SingleInstance::new(&app_id)?;
-    if !instance.is_single() {
-        println!("Another instance is already running. Send args to it...");
-        send_args_to_server(&app_id)?;
-        std::process::exit(0);
-    }
-    let (tx, rx) = mpsc::channel::<String>();
 
-    let socket = thread::spawn(|| ipc_server(app_id, tx));
-    Ok((rx, socket, instance))
+pub struct Server {
+    _instance: SingleInstance,
+    listener: LocalSocketListener,
+    conn: Option<LocalSocketStream>,
+}
+
+impl Server {
+    pub fn new(app_id: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let instance = single_instance::SingleInstance::new(&app_id)?;
+        if !instance.is_single() {
+            println!("Another instance is already running. Send args to it...");
+            send_args_to_server(&app_id)?;
+            std::process::exit(0);
+        }
+
+        let printname = format!("{}.sock", app_id);
+        let name = printname.clone().to_ns_name::<GenericNamespaced>()?;
+
+        let opts = ListenerOptions::new().name(name);
+        let listener = match opts.create_sync() {
+            Err(e) if e.kind() == io::ErrorKind::AddrInUse => {
+                eprintln!(
+                    "Error: could not start server because the socket file is occupied. Please check
+                    if {printname} is in use by another process and try again."
+                );
+                Err(e)?
+            }
+            x => x?,
+        };
+        listener.set_nonblocking(interprocess::local_socket::ListenerNonblockingMode::Both)?;
+
+        Ok(Self {
+            _instance: instance,
+            listener,
+            conn: None,
+        })
+    }
+
+    pub fn next(&self) -> io::Result<Option<String>> {
+        let binding;
+        let conn = match self.conn.as_ref() {
+            Some(conn) => conn,
+            None => {
+                binding = self.listener.accept();
+                match binding {
+                    Ok(ref conn) => conn,
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(None),
+                    Err(e) => return Err(e),
+                }
+            }
+        };
+        let mut reader = BufReader::new(conn);
+        let mut message = String::new();
+        if let Err(e) = reader.read_to_string(&mut message) {
+            return Err(e);
+        }
+        Ok(Some(message))
+    }
 }
 
 /// send args to server
-pub fn send_args_to_server(app_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn send_args_to_server(app_id: &str) -> io::Result<()> {
     let message = std::env::args().collect::<Vec<String>>().join(" ");
 
     let socket_path = if GenericNamespaced::is_supported() {
@@ -63,37 +102,4 @@ pub fn send_args_to_server(app_id: &str) -> Result<(), Box<dyn std::error::Error
 
     conn.write_all(message.as_bytes())?;
     Ok(())
-}
-
-fn ipc_server(
-    app_id: String,
-    tx: mpsc::Sender<String>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let printname = format!("{}.sock", app_id);
-    let name = printname.to_ns_name::<GenericNamespaced>()?;
-
-    // Configure our listener...
-    let opts = ListenerOptions::new().name(name);
-
-    let listener = LocalSocketListener::from_options(opts)?;
-
-    loop {
-        let mut conn = match listener.accept() {
-            Ok(c) => c,
-            Err(e) => {
-                eprintln!("接受连接失败: {}", e);
-                continue;
-            }
-        };
-
-        let mut buf = String::new();
-        match conn.read_to_string(&mut buf) {
-            Ok(_) => {
-                if let Err(e) = tx.send(buf) {
-                    eprintln!("发送参数失败: {}", e);
-                }
-            }
-            Err(e) => eprintln!("读取数据失败: {}", e),
-        }
-    }
 }

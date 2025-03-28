@@ -23,7 +23,7 @@
                     "value": "1"
                 }
             ],
-            "console": "externalTerminal"
+            "console": "integratedTerminal"
         },
         {
             "name": "BCP-Console: 启动(Windows)",
@@ -44,7 +44,7 @@
                     "value": "1"
                 }
             ],
-            "console": "externalTerminal"
+            "console": "integratedTerminal"
         },
     ]
 }

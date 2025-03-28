@@ -9,20 +9,24 @@ struct Cli {
     script: Option<String>,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     println!("{:?}", args);
-    let (tx, _join_handle, _instance) =
-        better_control_panel::ipc::startup(better_control_panel::app_id!()).unwrap();
-    println!("程序启动成功，单例运行中...");
-    for message in tx {
-        let args = match Cli::try_parse_from(message.split_ascii_whitespace()) {
-            Ok(args) => args,
+    let server = better_control_panel::ipc::Server::new(better_control_panel::app_id!())?;
+    loop {
+        match server.next() {
+            Ok(Some(message)) => match Cli::try_parse_from(message.split_ascii_whitespace()) {
+                Ok(args) => {
+                    println!("收到来自其他程序的消息：{:?}", args);
+                }
+                Err(e) => {
+                    eprintln!("解析命令行参数失败：{}", e);
+                }
+            },
+            Ok(None) => {}
             Err(e) => {
-                eprintln!("解析命令行参数失败：{}", e);
-                continue;
+                eprintln!("接收来自其他程序的消息失败：{}", e);
             }
-        };
-        println!("收到来自其他程序的消息：{:?}", args);
+        }
     }
 }

@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-better_control_panel = { version = "0.1.0", path = "../better_control_panel" }
+better_control_panel = { version = "0.1.0", path = "../better_control_panel", features = [
+    "eframe",
+] }
 clap = { version = "4.5.34", features = ["derive"] }
 eframe = "0.31.1"
 egui_extras = "0.31.1"
