@@ -1,0 +1,12 @@
+[package]
+name = "BetterControlPanel"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+better_control_panel = { version = "0.1.0", path = "../better_control_panel" }
+eframe = "0.31.1"
+egui_extras = "0.31.1"
+env_logger = "0.11.7"
+log = "0.4.27"
+single-instance = "0.3.3"

@@ -1,0 +1,8 @@
+[package]
+name = "better_control_panel"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+interprocess = "2.2.3"
+single-instance = "0.3.3"

@@ -1,2 +1,7 @@
 [workspace]
-members = ["BetterControlPanel/src-tauri"]
+resolver = "3"
+members = [
+    "BetterControlPanel",
+    "BetterControlPanel-Console",
+    "better_control_panel",
+]
