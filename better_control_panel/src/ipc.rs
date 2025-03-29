@@ -22,7 +22,48 @@ macro_rules! app_id {
             $crate::user_name!()
         )
     };
+    ($name:expr) => {
+        format!(
+            "{}_{}_{}",
+            $name,
+            env!("CARGO_PKG_VERSION"),
+            $crate::user_name!()
+        )
+    };
 }
+
+#[derive(Debug)]
+pub enum Error {
+    SingleInstanceError(single_instance::error::SingleInstanceError),
+    AlreadyRunning,
+    ToNsNameError(io::Error),
+    AddrInUseError(io::Error),
+    ListenerCreateError(io::Error),
+    SetNonBlockingError(io::Error),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+impl From<single_instance::error::SingleInstanceError> for Error {
+    fn from(e: single_instance::error::SingleInstanceError) -> Self {
+        Self::SingleInstanceError(e)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::SingleInstanceError(e) => write!(f, "failed to new SingleInstance: {}", e),
+            Self::AlreadyRunning => write!(f, "the application is already running"),
+            Self::ToNsNameError(e) => write!(f, "failed to convert to ns name: {}", e),
+            Self::AddrInUseError(e) => write!(f, "address in use error: {}", e),
+            Self::ListenerCreateError(e) => write!(f, "failed to create listener: {}", e),
+            Self::SetNonBlockingError(e) => write!(f, "failed to set non blocking: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 pub struct Server {
     _instance: SingleInstance,
@@ -31,29 +72,28 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(app_id: String) -> Result<Self, Box<dyn std::error::Error>> {
-        let instance = single_instance::SingleInstance::new(&app_id)?;
+    pub fn new(app_id: &str) -> Result<Self> {
+        let instance = single_instance::SingleInstance::new(app_id)?;
         if !instance.is_single() {
-            println!("Another instance is already running. Send args to it...");
-            send_args_to_server(&app_id)?;
-            std::process::exit(0);
+            Err(Error::AlreadyRunning)?
         }
 
         let printname = format!("{}.sock", app_id);
-        let name = printname.clone().to_ns_name::<GenericNamespaced>()?;
+        let name = printname
+            .clone()
+            .to_ns_name::<GenericNamespaced>()
+            .map_err(Error::ToNsNameError)?;
 
         let opts = ListenerOptions::new().name(name);
         let listener = match opts.create_sync() {
             Err(e) if e.kind() == io::ErrorKind::AddrInUse => {
-                eprintln!(
-                    "Error: could not start server because the socket file is occupied. Please check
-                    if {printname} is in use by another process and try again."
-                );
-                Err(e)?
+                Err(e).map_err(Error::AddrInUseError)?
             }
-            x => x?,
+            x => x.map_err(Error::ListenerCreateError)?,
         };
-        listener.set_nonblocking(interprocess::local_socket::ListenerNonblockingMode::Both)?;
+        listener
+            .set_nonblocking(interprocess::local_socket::ListenerNonblockingMode::Both)
+            .map_err(Error::SetNonBlockingError)?;
 
         Ok(Self {
             _instance: instance,
@@ -61,7 +101,6 @@ impl Server {
             conn: None,
         })
     }
-
     pub fn next(&self) -> io::Result<Option<String>> {
         let binding;
         let conn = match self.conn.as_ref() {
@@ -71,23 +110,19 @@ impl Server {
                 match binding {
                     Ok(ref conn) => conn,
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(None),
-                    Err(e) => return Err(e),
+                    Err(e) => Err(e)?,
                 }
             }
         };
         let mut reader = BufReader::new(conn);
         let mut message = String::new();
-        if let Err(e) = reader.read_to_string(&mut message) {
-            return Err(e);
-        }
+        reader.read_to_string(&mut message)?;
         Ok(Some(message))
     }
 }
 
-/// send args to server
-pub fn send_args_to_server(app_id: &str) -> io::Result<()> {
-    let message = std::env::args().collect::<Vec<String>>().join(" ");
-
+/// send str to server
+pub fn send_str_to_server(app_id: &str, message: &str) -> io::Result<()> {
     let socket_path = if GenericNamespaced::is_supported() {
         format!("{}.sock", app_id).to_ns_name::<GenericNamespaced>()?
     } else {
@@ -97,4 +132,9 @@ pub fn send_args_to_server(app_id: &str) -> io::Result<()> {
 
     conn.write_all(message.as_bytes())?;
     Ok(())
+}
+
+/// send args to server
+pub fn send_args_to_server(app_id: &str) -> io::Result<()> {
+    send_str_to_server(app_id, &std::env::args().collect::<Vec<String>>().join(" "))
 }

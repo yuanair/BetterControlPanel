@@ -2,6 +2,7 @@
 name = "BetterControlPanel"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 
 [dependencies]
 better_control_panel = { version = "0.1.0", path = "../better_control_panel", features = [
@@ -13,3 +14,6 @@ egui_extras = "0.31.1"
 env_logger = "0.11.7"
 image = "0.25.6"
 log = "0.4.27"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"

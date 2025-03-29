@@ -1,10 +1,11 @@
 use std::{
     io::{self, Write},
+    process,
     sync::mpsc,
     thread,
 };
 
-use better_control_panel::eframe::log_panel;
+use better_control_panel::{app_id, eframe::log_panel};
 use clap::Parser;
 use eframe::egui::{self, Color32};
 use log::{error, info};
@@ -20,11 +21,15 @@ enum Command {
 
 struct App {
     main_thread_sender: std::sync::mpsc::Sender<Command>,
+    rhai_script: String,
 }
 
 impl App {
     fn new(main_thread_sender: std::sync::mpsc::Sender<Command>) -> Self {
-        Self { main_thread_sender }
+        Self {
+            main_thread_sender,
+            rhai_script: "".to_string(),
+        }
     }
 }
 
@@ -39,6 +44,29 @@ impl eframe::App for App {
             ..Default::default()
         });
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("Better Control Panel");
+            let mut is_running = ui.text_edit_singleline(&mut self.rhai_script).lost_focus();
+            // if let Some(result) = &*self.rhai_result.read().unwrap() {
+            //     ui.label(match result {
+            //         Ok(v) => RichText::new(v).color(Color32::GREEN),
+            //         Err(e) => RichText::new(e).color(Color32::RED),
+            //     });
+            // }
+            is_running |= ui.button("Run").clicked();
+            if is_running {
+                match better_control_panel::ipc::send_str_to_server(
+                    &app_id!("BetterControlPanel-Console"),
+                    &self.rhai_script,
+                ) {
+                    Ok(()) => {
+                        info!("发送脚本到控制台成功");
+                    }
+                    Err(e) => {
+                        error!("发送脚本到控制台失败：{}", e);
+                    }
+                };
+            }
+            ui.separator();
             log_panel(ui);
         });
     }
@@ -48,16 +76,14 @@ impl eframe::App for App {
 }
 fn on_message(message: io::Result<Option<String>>) {
     match message {
-        Ok(Some(message)) => {
-            let args: Cli = match Cli::try_parse_from(message.split_ascii_whitespace()) {
-                Ok(args) => args,
-                Err(e) => {
-                    error!("解析命令行参数失败：{}", e);
-                    return;
-                }
-            };
-            info!("收到来自其他程序的消息：{:?}", args);
-        }
+        Ok(Some(message)) => match Cli::try_parse_from(message.split_ascii_whitespace()) {
+            Ok(args) => {
+                info!("收到来自其他程序的消息：{}", message);
+            }
+            Err(e) => {
+                error!("解析命令行参数失败：{}", e);
+            }
+        },
         Ok(None) => {}
         Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
         Err(e) => {
@@ -71,14 +97,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .target(env_logger::Target::Stdout)
         .format(|buf, record| {
             let log_message = better_control_panel::log::LogMessage::new(record);
-            buf.write_fmt(format_args!("{}", log_message))?;
+            buf.write_fmt(format_args!("{}\n", log_message))?;
             better_control_panel::log::write_global_buffer(log_message);
             Ok(())
         })
         .init();
     let _args = Cli::parse();
+    let app_id: String = better_control_panel::app_id!();
+    let server = match better_control_panel::ipc::Server::new(&app_id) {
+        Ok(server) => server,
+        Err(better_control_panel::ipc::Error::AlreadyRunning) => {
+            println!("Another instance is already running. Send args to it...");
+            better_control_panel::ipc::send_args_to_server(&app_id)?;
+            return Ok(());
+        }
+        Err(e) => {
+            error!("创建 IPC 服务失败：{}", e);
+            return Ok(());
+        }
+    };
+
     let (cmd_sender, cmd_receiver) = mpsc::channel::<Command>();
-    let server = better_control_panel::ipc::Server::new(better_control_panel::app_id!())?;
     let main_thread = thread::spawn(move || {
         loop {
             if let Ok(cmd) = cmd_receiver.try_recv() {
@@ -95,7 +134,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(App::new(cmd_sender)),
     )
     .with_icon(Some(
-        image::load_from_memory(include_bytes!("../rc/icons/logo.png"))?.to_rgba8(),
+        image::load_from_memory(include_bytes!("../rc/icons/logo.ico"))?.to_rgba8(),
     ))
     .build()?;
     main_thread.join().unwrap();
