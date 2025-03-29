@@ -1,11 +1,10 @@
 use std::{
     io::{self, Write},
-    process,
     sync::mpsc,
     thread,
 };
 
-use better_control_panel::{app_id, eframe::log_panel};
+use better_control_panel::app_id;
 use clap::Parser;
 use eframe::egui::{self, Color32};
 use log::{error, info};
@@ -67,7 +66,7 @@ impl eframe::App for App {
                 };
             }
             ui.separator();
-            log_panel(ui);
+            better_control_panel::eframe::LogPanel::new().show(ui);
         });
     }
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {

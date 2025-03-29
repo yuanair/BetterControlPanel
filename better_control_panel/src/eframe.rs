@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use eframe::egui::{self, Color32, Grid, IconData, ScrollArea, text::LayoutJob};
+use egui_extras::{Column, Table, TableBuilder, TableRow};
 use raw_window_handle::HasWindowHandle;
 
 pub struct Builder {
@@ -90,62 +91,76 @@ impl Builder {
     }
 }
 
-pub fn log_panel(ui: &mut egui::Ui) {
-    let logs = crate::log::read_global_buffer().unwrap();
+const HEADERS: &[&str] = &[
+    "Time",
+    "Thread",
+    "Thread ID",
+    "Level",
+    "Module Path",
+    "Message",
+];
+pub struct LogPanel {}
 
-    ScrollArea::both().show(ui, |ui| {
-        Grid::new("debug_grid").striped(true).show(ui, |ui| {
-            ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
-            const HEADERS: &[&str] = &[
-                "Time",
-                "Thread",
-                "Thread ID",
-                "Level",
-                "Module Path",
-                "Message",
-            ];
-            for (_col_idx, spec) in HEADERS.iter().enumerate() {
-                let mut job = LayoutJob::default();
-                job.append(
-                    &spec,
-                    0.0,
-                    egui::TextFormat::simple(
-                        egui::TextStyle::Heading.resolve(ui.style()),
-                        Color32::WHITE,
-                    ),
-                );
-                ui.label(job);
-            }
-            ui.end_row();
-            ui.style_mut().override_text_style = Some(egui::TextStyle::Monospace);
-            for log_message in logs.iter() {
-                let color = match log_message.level {
-                    log::Level::Trace => egui::Color32::MAGENTA,
-                    log::Level::Debug => egui::Color32::BLUE,
-                    log::Level::Info => egui::Color32::WHITE,
-                    log::Level::Warn => egui::Color32::YELLOW,
-                    log::Level::Error => egui::Color32::RED,
-                };
-                let raw = [
-                    &format!("{}", log_message.local_time),
-                    log_message.thread.name().unwrap_or_default(),
-                    &format!("{}", log_message.thread.id().as_u64()),
-                    &format!("{}", log_message.level),
-                    log_message.module_path.as_deref().unwrap_or_default(),
-                    &log_message.message,
-                ];
-                for (_col_idx, cell) in raw.iter().enumerate() {
-                    let mut job = LayoutJob::default();
-                    job.append(
-                        cell,
-                        0.0,
-                        egui::TextFormat::simple(egui::TextStyle::Body.resolve(ui.style()), color),
-                    );
-
-                    ui.label(job);
+impl LogPanel {
+    pub fn new() -> Self {
+        Self {}
+    }
+    pub fn show(&self, ui: &mut egui::Ui) {
+        TableBuilder::new(ui)
+            .striped(true)
+            .stick_to_bottom(true)
+            .columns(Column::auto().resizable(true), HEADERS.len())
+            .header(20.0, |mut header| {
+                for spec in HEADERS {
+                    header.col(|ui| {
+                        let mut job = LayoutJob::default();
+                        job.append(
+                            &spec,
+                            0.0,
+                            egui::TextFormat::simple(
+                                egui::TextStyle::Heading.resolve(ui.style()),
+                                Color32::WHITE,
+                            ),
+                        );
+                        ui.label(job);
+                    });
                 }
-                ui.end_row();
-            }
-        });
-    });
+            })
+            .body(|mut body| {
+                let logs = crate::log::read_global_buffer().unwrap();
+                for log_message in logs.iter() {
+                    let color = match log_message.level {
+                        log::Level::Trace => egui::Color32::MAGENTA,
+                        log::Level::Debug => egui::Color32::BLUE,
+                        log::Level::Info => egui::Color32::WHITE,
+                        log::Level::Warn => egui::Color32::YELLOW,
+                        log::Level::Error => egui::Color32::RED,
+                    };
+                    let raw = [
+                        &format!("{}", log_message.local_time),
+                        log_message.thread.name().unwrap_or_default(),
+                        &format!("{}", log_message.thread.id().as_u64()),
+                        &format!("{}", log_message.level),
+                        log_message.module_path.as_deref().unwrap_or_default(),
+                        &log_message.message,
+                    ];
+                    body.row(30.0, |mut row| {
+                        for cell in raw {
+                            row.col(|ui| {
+                                let mut job = LayoutJob::default();
+                                job.append(
+                                    cell,
+                                    0.0,
+                                    egui::TextFormat::simple(
+                                        egui::TextStyle::Body.resolve(ui.style()),
+                                        color,
+                                    ),
+                                );
+                                ui.label(job);
+                            });
+                        }
+                    });
+                }
+            });
+    }
 }
