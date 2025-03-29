@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use std::{
     io::{self, Write},
     sync::mpsc,
@@ -54,14 +56,14 @@ impl eframe::App for App {
             is_running |= ui.button("Run").clicked();
             if is_running {
                 match better_control_panel::ipc::send_str_to_server(
-                    &app_id!("BetterControlPanel-Console"),
+                    &app_id!("BetterControlPanel-Server"),
                     &self.rhai_script,
                 ) {
                     Ok(()) => {
-                        info!("发送脚本到控制台成功");
+                        info!("发送脚本给服务端成功");
                     }
                     Err(e) => {
-                        error!("发送脚本到控制台失败：{}", e);
+                        error!("发送脚本给服务端失败：{}", e);
                     }
                 };
             }

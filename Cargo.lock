@@ -22,6 +22,16 @@ version = "0.1.0"
 dependencies = [
  "better_control_panel",
  "clap",
+]
+
+[[package]]
+name = "BetterControlPanel-Server"
+version = "0.1.0"
+dependencies = [
+ "better_control_panel",
+ "clap",
+ "env_logger",
+ "log",
  "rhai",
 ]
 
