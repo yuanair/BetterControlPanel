@@ -1,4 +1,4 @@
-use eframe::egui;
+use eframe::egui::{self, Color32, Grid, text::LayoutJob};
 use raw_window_handle::HasWindowHandle;
 
 pub struct Builder {
@@ -69,9 +69,36 @@ impl Builder {
 pub fn log_panel(ui: &mut egui::Ui) {
     let logs = crate::log::read_global_buffer().unwrap();
 
+    Grid::new("debug_grid").striped(true).show(ui, |ui| {
+        // 表头
+        ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+        const HEADERS: &[&str] = &["Time", ("Thread"), ("Level"), ("Module Path"), ("Message")];
+        for (col_idx, spec) in HEADERS.iter().enumerate() {
+            //ui.set_width(self.max_widths[col_idx]);
+            let mut job = LayoutJob::default();
+            job.append(
+                &spec,
+                0.0,
+                egui::TextFormat::simple(
+                    egui::TextStyle::Heading.resolve(ui.style()),
+                    Color32::WHITE,
+                ),
+            );
+            ui.label(job);
+        }
+        ui.end_row();
+    });
     egui::ScrollArea::vertical()
         .stick_to_bottom(true)
         .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("time");
+                ui.label("thread");
+                ui.label("level");
+                ui.label("module_path");
+                ui.label("message");
+            });
+            ui.separator();
             for log_message in logs.iter() {
                 let color = match log_message.level {
                     log::Level::Trace => egui::Color32::MAGENTA,
@@ -81,10 +108,18 @@ pub fn log_panel(ui: &mut egui::Ui) {
                     log::Level::Error => egui::Color32::RED,
                 };
 
-                let timestamp = format!("{:?}", log_message.timestamp);
                 ui.horizontal(|ui| {
-                    ui.colored_label(color, timestamp);
-                    ui.colored_label(color, &log_message.message);
+                    ui.colored_label(color, format!("{}", log_message.local_time));
+                    ui.colored_label(
+                        color,
+                        format!("{}", log_message.thread.name().unwrap_or_default()),
+                    );
+                    ui.colored_label(color, format!("{}", log_message.level));
+                    ui.colored_label(
+                        color,
+                        format!("{}", log_message.module_path.as_deref().unwrap_or_default()),
+                    );
+                    ui.colored_label(color, format!("{}", log_message.message));
                 });
             }
         });

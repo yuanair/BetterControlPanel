@@ -70,8 +70,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_default_env()
         .target(env_logger::Target::Stdout)
         .format(|buf, record| {
-            better_control_panel::log::write_global_buffer(record);
-            buf.write_fmt(format_args!("{}", record.args()))
+            let log_message = better_control_panel::log::LogMessage::new(record);
+            buf.write_fmt(format_args!("{}", log_message))?;
+            better_control_panel::log::write_global_buffer(log_message);
+            Ok(())
         })
         .init();
     let _args = Cli::parse();

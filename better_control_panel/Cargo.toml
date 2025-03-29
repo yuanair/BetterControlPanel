@@ -10,6 +10,7 @@ default = []
 eframe = ["dep:eframe", "dep:egui_extras"]
 
 [dependencies]
+chrono = "0.4.40"
 eframe = { version = "0.31.1", optional = true }
 egui_extras = { version = "0.31.1", optional = true }
 interprocess = "2.2.3"

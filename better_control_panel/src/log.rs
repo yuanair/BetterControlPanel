@@ -1,26 +1,33 @@
-use std::sync::RwLock;
+use std::{sync::RwLock, thread::Thread};
 
+use chrono::{DateTime, Local};
 use lazy_static::lazy_static;
-use log::{Level, Record};
+use log::{Level, Log, Record};
 
 ///
 /// A struct to represent a log message.
 ///
 #[derive(Debug)]
 pub struct LogMessage {
-    pub thread_id: std::thread::ThreadId,
+    pub thread: Thread,
     pub level: Level,
     pub message: String,
-    pub timestamp: std::time::SystemTime,
+    pub local_time: DateTime<Local>,
+    pub module_path: Option<String>,
+    pub file: Option<String>,
+    pub line: Option<u32>,
 }
 
 impl LogMessage {
     pub fn new(record: &Record) -> Self {
         Self {
-            thread_id: std::thread::current().id(),
+            thread: std::thread::current(),
             level: record.level(),
             message: record.args().to_string(),
-            timestamp: std::time::SystemTime::now(),
+            local_time: Local::now(),
+            module_path: record.module_path().map(|s| s.to_string()),
+            file: record.file().map(|s| s.to_string()),
+            line: record.line(),
         }
     }
 }
@@ -29,8 +36,12 @@ impl std::fmt::Display for LogMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "[{:?} {:?} {}]: {}",
-            self.timestamp, self.thread_id, self.level, self.message
+            "[{} {} {} {}]: {}",
+            self.local_time,
+            self.thread.name().unwrap_or_default(),
+            self.level,
+            self.module_path.as_deref().unwrap_or_default(),
+            self.message
         )
     }
 }
@@ -41,9 +52,9 @@ lazy_static! {
     static ref LOGGER: RwLock<Buffer> = RwLock::new(vec![]);
 }
 
-pub fn write_global_buffer(record: &Record) {
+pub fn write_global_buffer(log_message: LogMessage) {
     let mut buffer = LOGGER.write().unwrap();
-    buffer.push(LogMessage::new(record));
+    buffer.push(log_message);
 }
 
 ///
