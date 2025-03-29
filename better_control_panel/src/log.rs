@@ -2,7 +2,7 @@ use std::{sync::RwLock, thread::Thread};
 
 use chrono::{DateTime, Local};
 use lazy_static::lazy_static;
-use log::{Level, Log, Record};
+use log::{Level, Record};
 
 ///
 /// A struct to represent a log message.

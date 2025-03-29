@@ -1,4 +1,6 @@
-use eframe::egui::{self, Color32, Grid, text::LayoutJob};
+use std::sync::Arc;
+
+use eframe::egui::{self, Color32, Grid, IconData, ScrollArea, text::LayoutJob};
 use raw_window_handle::HasWindowHandle;
 
 pub struct Builder {
@@ -9,6 +11,16 @@ pub struct Builder {
 
 impl Builder {
     pub fn new(app_name: String, app: Box<dyn eframe::App>) -> Self {
+        // let icon_data = include_bytes!("../rc/icons/logo.png");
+        // let img = image::load_from_memory_with_format(icon_data, image::ImageFormat::Png).unwrap();
+        // let rgba_data = img.into_rgba8();
+        // let (w, h) = (rgba_data.width(), rgba_data.height());
+        // let raw_data: Vec<u8> = rgba_data.into_raw();
+        // native_options.viewport.icon = Some(Arc::<IconData>::new(IconData {
+        //     rgba: raw_data,
+        //     width: w,
+        //     height: h,
+        // }));
         Self {
             app_name,
             options: eframe::NativeOptions {
@@ -21,6 +33,18 @@ impl Builder {
             },
             app,
         }
+    }
+    pub fn with_icon(mut self, icon: Option<image::RgbaImage>) -> Self {
+        self.options.viewport.icon = icon.map(|img| {
+            let (width, height) = (img.width(), img.height());
+            let rgba: Vec<u8> = img.into_raw();
+            Arc::new(IconData {
+                rgba,
+                width,
+                height,
+            })
+        });
+        self
     }
     pub fn with_option(mut self, option: eframe::NativeOptions) -> Self {
         self.options = option;
@@ -69,36 +93,31 @@ impl Builder {
 pub fn log_panel(ui: &mut egui::Ui) {
     let logs = crate::log::read_global_buffer().unwrap();
 
-    Grid::new("debug_grid").striped(true).show(ui, |ui| {
-        // 表头
-        ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
-        const HEADERS: &[&str] = &["Time", ("Thread"), ("Level"), ("Module Path"), ("Message")];
-        for (col_idx, spec) in HEADERS.iter().enumerate() {
-            //ui.set_width(self.max_widths[col_idx]);
-            let mut job = LayoutJob::default();
-            job.append(
-                &spec,
-                0.0,
-                egui::TextFormat::simple(
-                    egui::TextStyle::Heading.resolve(ui.style()),
-                    Color32::WHITE,
-                ),
-            );
-            ui.label(job);
-        }
-        ui.end_row();
-    });
-    egui::ScrollArea::vertical()
-        .stick_to_bottom(true)
-        .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("time");
-                ui.label("thread");
-                ui.label("level");
-                ui.label("module_path");
-                ui.label("message");
-            });
-            ui.separator();
+    ScrollArea::both().show(ui, |ui| {
+        Grid::new("debug_grid").striped(true).show(ui, |ui| {
+            ui.style_mut().override_text_style = Some(egui::TextStyle::Heading);
+            const HEADERS: &[&str] = &[
+                "Time",
+                "Thread",
+                "Thread ID",
+                "Level",
+                "Module Path",
+                "Message",
+            ];
+            for (_col_idx, spec) in HEADERS.iter().enumerate() {
+                let mut job = LayoutJob::default();
+                job.append(
+                    &spec,
+                    0.0,
+                    egui::TextFormat::simple(
+                        egui::TextStyle::Heading.resolve(ui.style()),
+                        Color32::WHITE,
+                    ),
+                );
+                ui.label(job);
+            }
+            ui.end_row();
+            ui.style_mut().override_text_style = Some(egui::TextStyle::Monospace);
             for log_message in logs.iter() {
                 let color = match log_message.level {
                     log::Level::Trace => egui::Color32::MAGENTA,
@@ -107,20 +126,26 @@ pub fn log_panel(ui: &mut egui::Ui) {
                     log::Level::Warn => egui::Color32::YELLOW,
                     log::Level::Error => egui::Color32::RED,
                 };
+                let raw = [
+                    &format!("{}", log_message.local_time),
+                    log_message.thread.name().unwrap_or_default(),
+                    &format!("{}", log_message.thread.id().as_u64()),
+                    &format!("{}", log_message.level),
+                    log_message.module_path.as_deref().unwrap_or_default(),
+                    &log_message.message,
+                ];
+                for (_col_idx, cell) in raw.iter().enumerate() {
+                    let mut job = LayoutJob::default();
+                    job.append(
+                        cell,
+                        0.0,
+                        egui::TextFormat::simple(egui::TextStyle::Body.resolve(ui.style()), color),
+                    );
 
-                ui.horizontal(|ui| {
-                    ui.colored_label(color, format!("{}", log_message.local_time));
-                    ui.colored_label(
-                        color,
-                        format!("{}", log_message.thread.name().unwrap_or_default()),
-                    );
-                    ui.colored_label(color, format!("{}", log_message.level));
-                    ui.colored_label(
-                        color,
-                        format!("{}", log_message.module_path.as_deref().unwrap_or_default()),
-                    );
-                    ui.colored_label(color, format!("{}", log_message.message));
-                });
+                    ui.label(job);
+                }
+                ui.end_row();
             }
         });
+    });
 }

@@ -1,9 +1,4 @@
-use std::{
-    f32::consts::E,
-    io::{self, BufRead, BufReader, Read, Write},
-    sync::mpsc,
-    thread::{self, JoinHandle},
-};
+use std::io::{self, BufReader, Read, Write};
 
 use interprocess::local_socket::{GenericFilePath, GenericNamespaced, ListenerOptions, prelude::*};
 use single_instance::SingleInstance;

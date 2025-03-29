@@ -32,7 +32,7 @@ impl eframe::App for App {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         Color32::TRANSPARENT.to_normalized_gamma_f32()
     }
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(egui::Visuals {
             window_fill: egui::Color32::MAGENTA,
             panel_fill: egui::Color32::TRANSPARENT,
@@ -94,6 +94,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Better Control Panel".to_owned(),
         Box::new(App::new(cmd_sender)),
     )
+    .with_icon(Some(
+        image::load_from_memory(include_bytes!("../rc/icons/logo.png"))?.to_rgba8(),
+    ))
     .build()?;
     main_thread.join().unwrap();
     Ok(())
