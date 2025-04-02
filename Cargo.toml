@@ -2,6 +2,6 @@
 resolver = "3"
 members = [
     "BetterControlPanel",
-    "BetterControlPanel-Console", "BetterControlPanel-Server",
+    "BetterControlPanel-Console", "BetterControlPanel-Server", "Test",
     "better_control_panel",
 ]

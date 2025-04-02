@@ -1,5 +1,5 @@
 #![windows_subsystem = "windows"]
-use std::{fs::File, io::Write};
+use std::fs::File;
 
 use clap::Parser;
 use log::{error, info};
