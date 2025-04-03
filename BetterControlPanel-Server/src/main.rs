@@ -15,7 +15,7 @@ struct App {
 }
 
 impl App {
-    fn new(args: Cli) -> Self {
+    fn new(_args: Cli) -> Self {
         let app_id: String = better_control_panel::app_id!();
         let server = match better_control_panel::ipc::Server::new(&app_id) {
             Ok(server) => server,
