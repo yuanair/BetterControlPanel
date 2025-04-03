@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Color32, Grid, IconData, ScrollArea, text::LayoutJob};
-use egui_extras::{Column, Table, TableBuilder, TableRow};
+use eframe::egui::{self, Color32, IconData, text::LayoutJob};
+use egui_extras::{Column, TableBuilder};
 use raw_window_handle::HasWindowHandle;
 
 pub struct Builder {

@@ -78,7 +78,7 @@ impl eframe::App for App {
 fn on_message(message: io::Result<Option<String>>) {
     match message {
         Ok(Some(message)) => match Cli::try_parse_from(message.split_ascii_whitespace()) {
-            Ok(args) => {
+            Ok(_args) => {
                 info!("收到来自其他程序的消息：{}", message);
             }
             Err(e) => {
