@@ -1,4 +1,13 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    process::Output,
+};
+
+use log::{error, info};
+#[cfg(feature = "rhai")]
+use rhai::{CustomType, TypeBuilder};
+
+use super::process::CommandExt;
 
 ///
 /// Error
@@ -20,7 +29,21 @@ impl Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::UnsuportedPlatform => None,
+            Error::CommandExecutionError(e) => Some(e),
+        }
+    }
+}
+
+#[cfg(feature = "rhai")]
+impl From<Error> for Box<rhai::EvalAltResult> {
+    fn from(e: Error) -> Self {
+        e.to_string().into()
+    }
+}
 
 ///
 /// Result
@@ -28,89 +51,155 @@ impl std::error::Error for Error {}
 pub type Result<T> = std::result::Result<T, Error>;
 
 ///
-/// auto install info
+/// Install Result
 ///
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct AutoInstallInfo {}
+pub type InstallResult = Result<Output>;
 
 ///
-/// rust proxy info
+/// install trait
 ///
+pub trait Install {
+    ///
+    /// install
+    ///
+    fn install(self) -> InstallResult;
+    ///
+    /// test if installed correctly
+    ///
+    fn test() -> InstallResult;
+}
+
+///
+/// rust proxy
+///
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct RustProxyInfo {
+pub struct RustProxy {
     /// the environment 'RUSTUP_DIST_SERVER'
-    dist_server: String,
+    pub dist_server: String,
     /// the environment 'RUSTUP_UPDATE_ROOT'
-    update_root: String,
+    pub update_root: String,
+}
+
+impl RustProxy {
+    pub const RUSTUP_DIST_SERVER: &'static str = "RUSTUP_DIST_SERVER";
+    pub const RUSTUP_UPDATE_ROOT: &'static str = "RUSTUP_UPDATE_ROOT";
+    pub fn as_env_args(&self) -> std::collections::HashMap<&'static str, &String> {
+        let mut map = std::collections::HashMap::new();
+        map.insert(Self::RUSTUP_DIST_SERVER, &self.dist_server);
+        map.insert(Self::RUSTUP_UPDATE_ROOT, &self.update_root);
+        map
+    }
+    pub fn into_env_args(self) -> std::collections::HashMap<&'static str, String> {
+        let mut map = std::collections::HashMap::new();
+        map.insert(Self::RUSTUP_DIST_SERVER, self.dist_server);
+        map.insert(Self::RUSTUP_UPDATE_ROOT, self.update_root);
+        map
+    }
 }
 
 ///
-/// rust auto install info
+/// rust
 ///
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct RustAutoInstallInfo {
+pub struct Rust {
     /// proxy
-    pub proxy: Option<RustProxyInfo>,
+    pub proxy: Option<RustProxy>,
 }
 
-///
-/// Install Rust
-///
-pub fn rust(info: RustAutoInstallInfo) -> Result<()> {
-    let mut vars = std::collections::HashMap::new();
-    if let Some(proxy) = info.proxy {
-        vars.insert("RUSTUP_DIST_SERVER", proxy.dist_server);
-        vars.insert("RUSTUP_UPDATE_ROOT", proxy.update_root);
+impl Install for Rust {
+    fn install(self) -> InstallResult {
+        let vars = self
+            .proxy
+            .as_ref()
+            .map(RustProxy::as_env_args)
+            .unwrap_or_default();
+        let output = if cfg!(windows) {
+            std::process::Command::new("powershell.exe")
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .stdin(std::process::Stdio::null())
+                .envs(vars)
+                .arg("Invoke-WebRequest")
+                .arg("-Uri")
+                .arg("https://win.rustup.rs")
+                .arg("-OutFile")
+                .arg("rustup-init.exe")
+                .arg(".\rustup-init.exe")
+                .arg("-y")
+                .arg("--default-toolchain")
+                .arg("stable")
+                .spawn()
+                .map_err(Error::CommandExecutionError)?
+                .wait_with_output()
+                .map_err(Error::CommandExecutionError)?
+        } else if cfg!(target_os = "linux") {
+            std::process::Command::new("curl")
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .stdin(std::process::Stdio::null())
+                .envs(vars)
+                .arg("--proto")
+                .arg("='https'")
+                .arg("--tlsv1.2")
+                .arg("-sSf")
+                .arg("https://sh.rustup.rs")
+                .arg("|")
+                .arg("sh")
+                .arg("-s")
+                .arg("--")
+                .arg("-y")
+                .spawn()
+                .map_err(Error::CommandExecutionError)?
+                .wait_with_output()
+                .map_err(Error::CommandExecutionError)?
+        } else {
+            return Err(Error::UnsuportedPlatform);
+        };
+        Ok(output)
     }
-    if cfg!(windows) {
-        std::process::Command::new("powershell.exe")
-            .envs(vars)
-            .arg("Invoke-WebRequest")
-            .arg("-Uri")
-            .arg("https://win.rustup.rs")
-            .arg("-OutFile")
-            .arg("rustup-init.exe")
-            .arg(".\rustup-init.exe")
-            .arg("-y")
-            .arg("--default-toolchain")
-            .arg("stable")
-            .spawn()
+    fn test() -> InstallResult {
+        Ok(std::process::Command::new("rustc")
+            .arg("--version")
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .stdin(std::process::Stdio::null())
+            .spawn_without_window()
             .map_err(Error::CommandExecutionError)?
-            .wait()
-            .map_err(Error::CommandExecutionError)?;
-    } else if cfg!(target_os = "linux") {
-        std::process::Command::new("curl")
-            .envs(vars)
-            .arg("--proto")
-            .arg("='https'")
-            .arg("--tlsv1.2")
-            .arg("-sSf")
-            .arg("https://sh.rustup.rs")
-            .arg("|")
-            .arg("sh")
-            .arg("-s")
-            .arg("--")
-            .arg("-y")
-            .spawn()
-            .map_err(Error::CommandExecutionError)?
-            .wait()
-            .map_err(Error::CommandExecutionError)?;
-    } else {
-        return Err(Error::UnsuportedPlatform);
+            .wait_with_output()
+            .map_err(Error::CommandExecutionError)?)
     }
-    test_rust()?;
-    Ok(())
 }
 
-///
-/// Test whether Rust is installed to PATH
-///
-pub fn test_rust() -> Result<()> {
-    std::process::Command::new("rustc")
-        .arg("--version")
-        .spawn()
-        .map_err(Error::CommandExecutionError)?
-        .wait()
-        .map_err(Error::CommandExecutionError)?;
-    Ok(())
+#[cfg(feature = "rhai")]
+pub fn registe_to_rhai(engine: &mut rhai::Engine) {
+    use rhai::EvalAltResult;
+
+    engine.build_type::<RustProxy>();
+    engine.build_type::<Rust>();
+    engine.register_fn("test", || -> std::result::Result<(), Box<EvalAltResult>> {
+        let output = Rust::test()?;
+
+        if !output.stdout.is_empty() {
+            info!("rustc output: {}", String::from_utf8_lossy(&output.stdout));
+        }
+        if !output.stderr.is_empty() {
+            error!("rustc error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+        if !output.status.success() {
+            Err(Error::CommandExecutionError(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "rustc command failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ),
+            )))?
+        }
+        Ok(())
+    });
+    // let mut rust_module = Module::new();
+    // rust_module.set_native_fn("test", Rust::test);
+
+    // engine.register_static_module("Rust", rust_module.into());
 }

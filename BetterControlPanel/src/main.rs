@@ -1,24 +1,17 @@
 #![windows_subsystem = "windows"]
 
-use std::{
-    io::{self, Write},
-    sync::mpsc,
-    thread,
-};
+use std::{io::Write, sync::mpsc, thread};
 
 use better_control_panel::app_id;
 use clap::Parser;
 use eframe::egui::{self, Color32};
 use log::{error, info};
+use serde::{Deserialize, Serialize};
 
 /// Better Control Panel
 #[derive(Debug, Parser)]
 #[command(name = env!("CARGO_PKG_NAME"), version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"))]
 struct Cli {}
-
-enum Command {
-    Exit,
-}
 
 struct App {
     main_thread_sender: std::sync::mpsc::Sender<Command>,
@@ -55,15 +48,22 @@ impl eframe::App for App {
             // }
             is_running |= ui.button("Run").clicked();
             if is_running {
-                match better_control_panel::ipc::send_str_to_server(
-                    &app_id!("BetterControlPanel-Server"),
-                    &self.rhai_script,
-                ) {
-                    Ok(()) => {
-                        info!("发送脚本给服务端成功");
+                match better_control_panel::ipc::Sender::new(&app_id!("BetterControlPanel-Server"))
+                {
+                    Ok(mut sender) => {
+                        match sender.send(better_control_panel::util::command::Command::Exec(
+                            self.rhai_script.clone(),
+                        )) {
+                            Ok(_) => {
+                                info!("脚本发送成功");
+                            }
+                            Err(e) => {
+                                error!("脚本发送失败：{}", e);
+                            }
+                        }
                     }
                     Err(e) => {
-                        error!("发送脚本给服务端失败：{}", e);
+                        error!("创建 IPC 客户端失败：{}", e);
                     }
                 };
             }
@@ -75,22 +75,11 @@ impl eframe::App for App {
         self.main_thread_sender.send(Command::Exit).unwrap();
     }
 }
-fn on_message(message: io::Result<Option<String>>) {
-    match message {
-        Ok(Some(message)) => match Cli::try_parse_from(message.split_ascii_whitespace()) {
-            Ok(_args) => {
-                info!("收到来自其他程序的消息：{}", message);
-            }
-            Err(e) => {
-                error!("解析命令行参数失败：{}", e);
-            }
-        },
-        Ok(None) => {}
-        Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
-        Err(e) => {
-            error!("接收消息失败：{}", e);
-        }
-    }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Command {
+    Args(Vec<String>),
+    Exit,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -109,7 +98,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(server) => server,
         Err(better_control_panel::ipc::Error::AlreadyRunning) => {
             println!("Another instance is already running. Send args to it...");
-            better_control_panel::ipc::send_args_to_server(&app_id)?;
+            better_control_panel::ipc::Sender::new(&app_id)?
+                .send(Command::Args(std::env::args().collect()))?;
             return Ok(());
         }
         Err(e) => {
@@ -123,11 +113,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if let Ok(cmd) = cmd_receiver.try_recv() {
                 match cmd {
+                    Command::Args(args) => match Cli::try_parse_from(args.clone()) {
+                        Ok(_args) => {
+                            info!("收到来自其他程序的消息：{}", args.join(" "));
+                        }
+                        Err(e) => {
+                            error!("解析命令行参数失败：{}", e);
+                        }
+                    },
                     Command::Exit => return,
                 }
             }
-            let message = server.next();
-            on_message(message);
+            let message = server.recevie::<Command>();
+            match message {
+                Ok(Some(command)) => match command {
+                    Command::Args(args) => match Cli::try_parse_from(args.clone()) {
+                        Ok(_args) => {
+                            info!("收到来自其他程序的消息：{}", args.join(" "));
+                        }
+                        Err(e) => {
+                            error!("解析命令行参数失败：{}", e);
+                        }
+                    },
+                    Command::Exit => return,
+                },
+                Ok(None) => {}
+                Err(e) => {
+                    error!("接收消息失败：{}", e);
+                }
+            }
         }
     });
     better_control_panel::eframe::Builder::new(

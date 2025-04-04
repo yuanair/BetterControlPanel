@@ -1,6 +1,7 @@
 use std::io::{self, BufReader, Read, Write};
 
 use interprocess::local_socket::{GenericFilePath, GenericNamespaced, ListenerOptions, prelude::*};
+use serde::{Deserialize, Serialize};
 use single_instance::SingleInstance;
 
 #[macro_export]
@@ -40,6 +41,11 @@ pub enum Error {
     AddrInUseError(io::Error),
     ListenerCreateError(io::Error),
     SetNonBlockingError(io::Error),
+    EncodeError(bincode::error::EncodeError),
+    DecodeError(bincode::error::DecodeError),
+    ConnectError(io::Error),
+    WriteError(io::Error),
+    ReadError(io::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -59,16 +65,36 @@ impl std::fmt::Display for Error {
             Self::AddrInUseError(e) => write!(f, "address in use error: {}", e),
             Self::ListenerCreateError(e) => write!(f, "failed to create listener: {}", e),
             Self::SetNonBlockingError(e) => write!(f, "failed to set non blocking: {}", e),
+            Self::EncodeError(e) => write!(f, "failed to encode: {}", e),
+            Self::DecodeError(e) => write!(f, "failed to decode: {}", e),
+            Self::ConnectError(e) => write!(f, "failed to connect: {}", e),
+            Self::WriteError(e) => write!(f, "failed to write: {}", e),
+            Self::ReadError(e) => write!(f, "failed to read: {}", e),
         }
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::SingleInstanceError(e) => Some(e),
+            Self::AlreadyRunning => None,
+            Self::ToNsNameError(e) => Some(e),
+            Self::AddrInUseError(e) => Some(e),
+            Self::ListenerCreateError(e) => Some(e),
+            Self::SetNonBlockingError(e) => Some(e),
+            Self::EncodeError(e) => Some(e),
+            Self::DecodeError(e) => Some(e),
+            Self::ConnectError(e) => Some(e),
+            Self::WriteError(e) => Some(e),
+            Self::ReadError(e) => Some(e),
+        }
+    }
+}
 
 pub struct Server {
     _instance: SingleInstance,
     listener: LocalSocketListener,
-    conn: Option<LocalSocketStream>,
 }
 
 impl Server {
@@ -98,43 +124,87 @@ impl Server {
         Ok(Self {
             _instance: instance,
             listener,
-            conn: None,
         })
     }
-    pub fn next(&self) -> io::Result<Option<String>> {
-        let binding;
-        let conn = match self.conn.as_ref() {
-            Some(conn) => conn,
-            None => {
-                binding = self.listener.accept();
-                match binding {
-                    Ok(ref conn) => conn,
-                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(None),
-                    Err(e) => Err(e)?,
-                }
-            }
+    pub fn receiver(&self) -> Result<Option<BufReader<LocalSocketStream>>> {
+        let binding = self.listener.accept();
+        match binding {
+            Ok(conn) => Ok(Some(BufReader::new(conn))),
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(None),
+            Err(e) => Err(e).map_err(Error::ConnectError)?,
+        }
+    }
+    pub fn recevie_str(&self) -> Result<Option<String>> {
+        let mut reader = match self.receiver()? {
+            Some(reader) => reader,
+            None => return Ok(None),
         };
-        let mut reader = BufReader::new(conn);
         let mut message = String::new();
-        reader.read_to_string(&mut message)?;
+        reader
+            .read_to_string(&mut message)
+            .map_err(Error::ReadError)?;
+        Ok(Some(message))
+    }
+    pub fn recevie_bytes(&self) -> Result<Option<Vec<u8>>> {
+        let mut reader = match self.receiver()? {
+            Some(reader) => reader,
+            None => return Ok(None),
+        };
+        let mut message = Vec::new();
+        reader.read_to_end(&mut message).map_err(Error::ReadError)?;
+        Ok(Some(message))
+    }
+    pub fn recevie<T>(&self) -> Result<Option<T>>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let mut reader = match self.receiver()? {
+            Some(reader) => reader,
+            None => return Ok(None),
+        };
+        let message =
+            bincode::serde::decode_from_std_read(&mut reader, bincode::config::standard())
+                .map_err(Error::DecodeError)?;
         Ok(Some(message))
     }
 }
 
-/// send str to server
-pub fn send_str_to_server(app_id: &str, message: &str) -> io::Result<()> {
-    let socket_path = if GenericNamespaced::is_supported() {
-        format!("{}.sock", app_id).to_ns_name::<GenericNamespaced>()?
-    } else {
-        format!("/tmp/{}.sock", app_id).to_fs_name::<GenericFilePath>()?
-    };
-    let mut conn = LocalSocketStream::connect(socket_path)?;
-
-    conn.write_all(message.as_bytes())?;
-    Ok(())
+///
+/// sender
+///
+#[derive(Debug)]
+pub struct Sender {
+    conn: LocalSocketStream,
 }
 
-/// send args to server
-pub fn send_args_to_server(app_id: &str) -> io::Result<()> {
-    send_str_to_server(app_id, &std::env::args().collect::<Vec<String>>().join(" "))
+impl Sender {
+    pub fn new(app_id: &str) -> Result<Self> {
+        let socket_path = if GenericNamespaced::is_supported() {
+            format!("{}.sock", app_id).to_ns_name::<GenericNamespaced>()
+        } else {
+            format!("/tmp/{}.sock", app_id).to_fs_name::<GenericFilePath>()
+        }
+        .map_err(Error::ToNsNameError)?;
+        let conn = LocalSocketStream::connect(socket_path).map_err(Error::ConnectError)?;
+        Ok(Self { conn })
+    }
+    pub fn send_bytes(&mut self, message: &[u8]) -> Result<()> {
+        self.conn.write_all(message).map_err(Error::WriteError)?;
+        Ok(())
+    }
+    pub fn send_str(&mut self, message: &str) -> Result<()> {
+        self.conn
+            .write_all(message.as_bytes())
+            .map_err(Error::WriteError)?;
+        Ok(())
+    }
+    pub fn send<T>(&mut self, message: T) -> Result<()>
+    where
+        T: Serialize,
+    {
+        self.send_bytes(
+            &bincode::serde::encode_to_vec(message, bincode::config::standard())
+                .map_err(Error::EncodeError)?,
+        )
+    }
 }

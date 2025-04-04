@@ -1,8 +1,9 @@
 #![windows_subsystem = "windows"]
 use std::fs::File;
 
+use better_control_panel::util::command::Command;
 use clap::Parser;
-use log::{error, info};
+use log::{debug, error, info};
 
 /// Better Control Panel Server
 #[derive(Debug, Parser)]
@@ -21,7 +22,10 @@ impl App {
             Ok(server) => server,
             Err(better_control_panel::ipc::Error::AlreadyRunning) => {
                 info!("Another instance is already running. Send args to it...");
-                better_control_panel::ipc::send_args_to_server(&app_id).unwrap();
+                better_control_panel::ipc::Sender::new(&app_id)
+                    .unwrap()
+                    .send(Command::Args(std::env::args().collect()))
+                    .unwrap();
                 std::process::exit(0)
             }
             Err(e) => {
@@ -29,9 +33,22 @@ impl App {
                 std::process::exit(0)
             }
         };
+        let mut rhai_engine = rhai::Engine::new();
+        rhai_engine
+            .on_print(|s| info!("Rhai: {}", s))
+            .on_debug(|s, src, pos| {
+                debug!(
+                    "Rhai Debug: {}\n\tat{}: {}",
+                    s,
+                    pos,
+                    src.unwrap_or_default()
+                )
+            });
+
+        better_control_panel::util::registe_to_rhai(&mut rhai_engine);
         Self {
             server,
-            rhai_engine: rhai::Engine::new(),
+            rhai_engine,
         }
     }
 
@@ -53,11 +70,21 @@ impl App {
 
     fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         loop {
-            match self.server.next() {
-                Ok(Some(message)) => {
-                    info!("收到来自其他程序的消息：{}", message);
-                    self.on_message(&message);
-                }
+            match self.server.recevie::<Command>() {
+                Ok(Some(command)) => match command {
+                    Command::Exec(script) => {
+                        debug!("接收到执行脚本命令：{}", script);
+                        self.on_message(&script)
+                    }
+                    Command::Args(args) => {
+                        debug!("接收到命令行参数：{:?}", args);
+                        self.on_message(&args.join(" "));
+                    }
+                    Command::Exit => {
+                        info!("收到退出命令");
+                        break Ok(());
+                    }
+                },
                 Ok(None) => {}
                 Err(e) => {
                     error!("接收来自其他程序的消息失败：{}", e);

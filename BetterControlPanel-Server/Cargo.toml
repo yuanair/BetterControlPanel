@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-better_control_panel = { version = "0.1.0", path = "../better_control_panel" }
+better_control_panel = { version = "0.1.0", path = "../better_control_panel", features = [
+    "rhai",
+] }
 env_logger = "0.11.7"
 log = "0.4.27"
 clap = { version = "4.5.34", features = ["derive"] }
 rhai = "1.21.0"
+serde = { version = "1.0.219", features = ["derive"] }
