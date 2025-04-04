@@ -103,7 +103,7 @@ pub fn rust(info: RustAutoInstallInfo) -> Result<()> {
 }
 
 ///
-/// Test Rust is installed to PATH
+/// Test whether Rust is installed to PATH
 ///
 pub fn test_rust() -> Result<()> {
     std::process::Command::new("rustc")
