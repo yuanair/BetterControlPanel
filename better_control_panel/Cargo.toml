@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 description = "better control panel"
 license-file = "../LICENSE"
+repository = "https://github.com/yuanair/BetterControlPanel"
+readme = "README.md"
+keywords = ["control", "panel", "better"]
 
 [features]
 default = []
