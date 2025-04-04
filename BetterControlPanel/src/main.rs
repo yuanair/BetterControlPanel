@@ -2,11 +2,10 @@
 
 use std::{io::Write, sync::mpsc, thread};
 
-use better_control_panel::app_id;
+use better_control_panel::{app_id, util::command::ReciverCommand};
 use clap::Parser;
 use eframe::egui::{self, Color32};
 use log::{error, info};
-use serde::{Deserialize, Serialize};
 
 /// Better Control Panel
 #[derive(Debug, Parser)]
@@ -14,12 +13,12 @@ use serde::{Deserialize, Serialize};
 struct Cli {}
 
 struct App {
-    main_thread_sender: std::sync::mpsc::Sender<Command>,
+    main_thread_sender: std::sync::mpsc::Sender<ReciverCommand>,
     rhai_script: String,
 }
 
 impl App {
-    fn new(main_thread_sender: std::sync::mpsc::Sender<Command>) -> Self {
+    fn new(main_thread_sender: std::sync::mpsc::Sender<ReciverCommand>) -> Self {
         Self {
             main_thread_sender,
             rhai_script: "".to_string(),
@@ -51,9 +50,10 @@ impl eframe::App for App {
                 match better_control_panel::ipc::Sender::new(&app_id!("BetterControlPanel-Server"))
                 {
                     Ok(mut sender) => {
-                        match sender.send(better_control_panel::util::command::Command::Exec(
-                            self.rhai_script.clone(),
-                        )) {
+                        match sender.send(better_control_panel::util::command::Command::Exec {
+                            app_id: better_control_panel::app_id!(),
+                            script: self.rhai_script.clone(),
+                        }) {
                             Ok(_) => {
                                 info!("脚本发送成功");
                             }
@@ -72,14 +72,8 @@ impl eframe::App for App {
         });
     }
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        self.main_thread_sender.send(Command::Exit).unwrap();
+        self.main_thread_sender.send(ReciverCommand::Exit).unwrap();
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Command {
-    Args(Vec<String>),
-    Exit,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -99,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(better_control_panel::ipc::Error::AlreadyRunning) => {
             println!("Another instance is already running. Send args to it...");
             better_control_panel::ipc::Sender::new(&app_id)?
-                .send(Command::Args(std::env::args().collect()))?;
+                .send(ReciverCommand::Args(std::env::args().collect()))?;
             return Ok(());
         }
         Err(e) => {
@@ -108,12 +102,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let (cmd_sender, cmd_receiver) = mpsc::channel::<Command>();
+    let bcp_server = match std::process::Command::new("BetterControlPanel-Server.exe").spawn() {
+        Ok(bcp_server) => bcp_server,
+        Err(e) => {
+            error!("启动 BetterControlPanel-Server.exe 失败：{}", e);
+            return Ok(());
+        }
+    };
+
+    let (cmd_sender, cmd_receiver) = mpsc::channel::<ReciverCommand>();
     let main_thread = thread::spawn(move || {
         loop {
             if let Ok(cmd) = cmd_receiver.try_recv() {
                 match cmd {
-                    Command::Args(args) => match Cli::try_parse_from(args.clone()) {
+                    ReciverCommand::ExecResult { result } => {
+                        info!("脚本执行结果：{}", result);
+                    }
+                    ReciverCommand::Args(args) => match Cli::try_parse_from(args.clone()) {
                         Ok(_args) => {
                             info!("收到来自其他程序的消息：{}", args.join(" "));
                         }
@@ -121,13 +126,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             error!("解析命令行参数失败：{}", e);
                         }
                     },
-                    Command::Exit => return,
+                    ReciverCommand::Exit => return,
                 }
             }
-            let message = server.recevie::<Command>();
+            let message = server.recevie::<ReciverCommand>();
             match message {
                 Ok(Some(command)) => match command {
-                    Command::Args(args) => match Cli::try_parse_from(args.clone()) {
+                    ReciverCommand::ExecResult { result } => {
+                        info!("脚本执行结果：{}", result);
+                    }
+                    ReciverCommand::Args(args) => match Cli::try_parse_from(args.clone()) {
                         Ok(_args) => {
                             info!("收到来自其他程序的消息：{}", args.join(" "));
                         }
@@ -135,7 +143,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             error!("解析命令行参数失败：{}", e);
                         }
                     },
-                    Command::Exit => return,
+                    ReciverCommand::Exit => return,
                 },
                 Ok(None) => {}
                 Err(e) => {
@@ -153,5 +161,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ))
     .build()?;
     main_thread.join().unwrap();
+    better_control_panel::ipc::Sender::new(&better_control_panel::app_id!(
+        "BetterControlPanel-Server"
+    ))?
+    .send(better_control_panel::util::command::Command::Exit)?;
+    bcp_server.wait_with_output()?;
     Ok(())
 }

@@ -126,7 +126,7 @@ impl Server {
             listener,
         })
     }
-    pub fn receiver(&self) -> Result<Option<BufReader<LocalSocketStream>>> {
+    pub unsafe fn receiver(&self) -> Result<Option<BufReader<LocalSocketStream>>> {
         let binding = self.listener.accept();
         match binding {
             Ok(conn) => Ok(Some(BufReader::new(conn))),
@@ -135,7 +135,7 @@ impl Server {
         }
     }
     pub fn recevie_str(&self) -> Result<Option<String>> {
-        let mut reader = match self.receiver()? {
+        let mut reader = match unsafe { self.receiver() }? {
             Some(reader) => reader,
             None => return Ok(None),
         };
@@ -145,8 +145,8 @@ impl Server {
             .map_err(Error::ReadError)?;
         Ok(Some(message))
     }
-    pub fn recevie_bytes(&self) -> Result<Option<Vec<u8>>> {
-        let mut reader = match self.receiver()? {
+    pub unsafe fn recevie_bytes(&self) -> Result<Option<Vec<u8>>> {
+        let mut reader = match unsafe { self.receiver() }? {
             Some(reader) => reader,
             None => return Ok(None),
         };
@@ -158,7 +158,7 @@ impl Server {
     where
         T: for<'de> Deserialize<'de>,
     {
-        let mut reader = match self.receiver()? {
+        let mut reader = match unsafe { self.receiver() }? {
             Some(reader) => reader,
             None => return Ok(None),
         };

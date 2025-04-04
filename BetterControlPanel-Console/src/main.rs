@@ -1,5 +1,5 @@
+use better_control_panel::util::command::ReciverCommand;
 use clap::Parser;
-use serde::{Deserialize, Serialize};
 
 /// Better Control Panel Console
 #[derive(Debug, Parser)]
@@ -14,9 +14,24 @@ struct App {
     server: better_control_panel::ipc::Server,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Command {
-    Args(Vec<String>),
+impl Drop for App {
+    fn drop(&mut self) {
+        match better_control_panel::ipc::Sender::new(&better_control_panel::app_id!(
+            "BetterControlPanel-Server"
+        )) {
+            Ok(mut sender) => {
+                match sender.send(better_control_panel::util::command::Command::Exit) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("发送消息给服务端失败：{}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("发送消息给服务端失败：{}", e);
+            }
+        }
+    }
 }
 
 impl App {
@@ -28,7 +43,7 @@ impl App {
                 println!("Another instance is already running. Send args to it...");
                 better_control_panel::ipc::Sender::new(&app_id)
                     .unwrap()
-                    .send(Command::Args(std::env::args().collect()))
+                    .send(ReciverCommand::Args(std::env::args().collect()))
                     .unwrap();
                 std::process::exit(0)
             }
@@ -38,20 +53,21 @@ impl App {
             }
         };
         let result = Self { server };
-        result.on_message(&args.script);
+        result.run_script(&args.script);
         result
     }
 
-    fn on_message(&self, message: &str) {
+    fn run_script(&self, script: &str) {
         match better_control_panel::ipc::Sender::new(&better_control_panel::app_id!(
             "BetterControlPanel-Server"
         )) {
             Ok(mut sender) => {
-                match sender.send(better_control_panel::util::command::Command::Exec(
-                    message.to_string(),
-                )) {
+                match sender.send(better_control_panel::util::command::Command::Exec {
+                    app_id: better_control_panel::app_id!(),
+                    script: script.to_string(),
+                }) {
                     Ok(()) => {
-                        println!("发送消息给服务端成功：{}", message);
+                        println!("发送消息给服务端成功：{}", script);
                     }
                     Err(e) => {
                         eprintln!("发送消息给服务端失败：{}", e);
@@ -65,16 +81,45 @@ impl App {
     }
 
     fn run(self) -> Result<(), Box<dyn std::error::Error>> {
-        match self.server.recevie_str() {
-            Ok(Some(message)) => {
-                println!("收到来自其他程序的消息：{}", message);
-                self.on_message(&message);
-            }
-            Ok(None) => {}
+        let bcp_server = match std::process::Command::new("BetterControlPanel-Server.exe").spawn() {
+            Ok(bcp_server) => bcp_server,
             Err(e) => {
-                eprintln!("接收来自其他程序的消息失败：{}", e);
+                eprintln!("启动服务端失败：{}", e);
+                return Ok(());
+            }
+        };
+        loop {
+            match self.server.recevie::<ReciverCommand>() {
+                Ok(Some(command)) => match command {
+                    ReciverCommand::ExecResult { result } => {
+                        println!("执行结果：{}", result);
+                        break;
+                    }
+                    ReciverCommand::Args(args) => match Cli::try_parse_from(&args) {
+                        Ok(cli) => {
+                            self.run_script(&cli.script);
+                        }
+                        Err(e) => {
+                            eprintln!("解析命令行参数失败：{}", e);
+                        }
+                    },
+                    ReciverCommand::Exit => {
+                        println!("退出...");
+                        break;
+                    }
+                },
+                Ok(None) => {}
+                Err(e) => {
+                    eprintln!("接收来自其他程序的消息失败：{}", e);
+                }
             }
         }
+        better_control_panel::ipc::Sender::new(&better_control_panel::app_id!(
+            "BetterControlPanel-Server"
+        ))?
+        .send(better_control_panel::util::command::Command::Exit)?;
+        bcp_server.wait_with_output()?;
+
         Ok(())
     }
 }

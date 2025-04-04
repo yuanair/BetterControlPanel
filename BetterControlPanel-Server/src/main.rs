@@ -1,7 +1,10 @@
 #![windows_subsystem = "windows"]
 use std::fs::File;
 
-use better_control_panel::util::command::Command;
+use better_control_panel::{
+    ipc::Sender,
+    util::command::{Command, ReciverCommand},
+};
 use clap::Parser;
 use log::{debug, error, info};
 
@@ -52,18 +55,6 @@ impl App {
         }
     }
 
-    fn on_message(&self, message: &str) {
-        let result = self.run_script(message);
-        match result {
-            Ok(value) => {
-                info!("脚本执行结果：{:?}", value);
-            }
-            Err(e) => {
-                error!("脚本执行失败：{}", e);
-            }
-        }
-    }
-
     fn run_script(&self, script: &str) -> Result<rhai::Dynamic, Box<rhai::EvalAltResult>> {
         self.rhai_engine.eval::<rhai::Dynamic>(&script)
     }
@@ -72,14 +63,31 @@ impl App {
         loop {
             match self.server.recevie::<Command>() {
                 Ok(Some(command)) => match command {
-                    Command::Exec(script) => {
+                    Command::Exec {
+                        app_id: sender_app_id,
+                        script,
+                    } => {
                         debug!("接收到执行脚本命令：{}", script);
-                        self.on_message(&script)
+                        match self.run_script(&script) {
+                            Ok(value) => {
+                                Sender::new(&sender_app_id)?.send(ReciverCommand::ExecResult {
+                                    result: value.to_string(),
+                                })?;
+                                info!("脚本执行结果：{:?}", value);
+                            }
+                            Err(e) => {
+                                error!("脚本执行失败：{}", e);
+                            }
+                        }
                     }
-                    Command::Args(args) => {
-                        debug!("接收到命令行参数：{:?}", args);
-                        self.on_message(&args.join(" "));
-                    }
+                    Command::Args(args) => match Cli::try_parse_from(&args) {
+                        Ok(_) => {
+                            debug!("接收到命令行参数：{}", args.join(" "));
+                        }
+                        Err(e) => {
+                            error!("解析命令行参数失败：{}", e);
+                        }
+                    },
                     Command::Exit => {
                         info!("收到退出命令");
                         break Ok(());
