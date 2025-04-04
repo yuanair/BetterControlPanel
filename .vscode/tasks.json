@@ -54,6 +54,41 @@
 		},
 		{
 			"type": "cargo",
+			"group": "build",
+			"command": "+nightly",
+			"env": {
+				"RUST_LOG": "info"
+			},
+			"args": [
+				"build",
+				"--features",
+				"nightly"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "BCP: build debug nightly"
+		},
+		{
+			"type": "cargo",
+			"group": "build",
+			"command": "+nightly",
+			"env": {
+				"RUST_LOG": "info"
+			},
+			"args": [
+				"build",
+				"--features",
+				"nightly",
+				"--release"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "BCP: build release nightly"
+		},
+		{
+			"type": "cargo",
 			"command": "publish",
 			"args": [
 				"--package",

@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 build = "build.rs"
 
+[features]
+default = []
+nightly = ["better_control_panel/thread_id_value"]
+
 [dependencies]
 better_control_panel = { version = "0.1.0", path = "../better_control_panel", features = [
     "eframe",

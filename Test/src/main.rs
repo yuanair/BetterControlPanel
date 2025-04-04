@@ -1,4 +1,3 @@
-#![feature(map_try_insert)]
 use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write, path::PathBuf};
 
 use clap::Parser;
@@ -44,14 +43,16 @@ struct Items {
 impl Items {
     fn on_args(&mut self, args: Args) {
         match args {
-            Args::Add { name, content } => match self.items.try_insert(name, Item::new(content)) {
-                Ok(item) => {
-                    println!("added: {item} ");
+            Args::Add { name, content } => {
+                match self.items.insert(name.clone(), Item::new(content)) {
+                    Some(_) => {
+                        println!("already exists: {name} ");
+                    }
+                    None => {
+                        println!("added: {name} ");
+                    }
                 }
-                Err(e) => {
-                    println!("already exists: {name} ", name = e.entry.key());
-                }
-            },
+            }
             Args::Edit { name, content } => match self.items.get_mut(&name) {
                 Some(item) => {
                     item.content = content;

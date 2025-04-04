@@ -12,6 +12,7 @@ exclude = ["rc"]
 [features]
 default = []
 eframe = ["dep:eframe", "dep:egui_extras"]
+thread_id_value = []
 
 [dependencies]
 chrono = "0.4.40"

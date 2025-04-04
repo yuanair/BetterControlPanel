@@ -94,6 +94,7 @@ impl Builder {
 const HEADERS: &[&str] = &[
     "Time",
     "Thread",
+    #[cfg(feature = "thread_id_value")]
     "Thread ID",
     "Level",
     "Module Path",
@@ -139,6 +140,7 @@ impl LogPanel {
                     let raw = [
                         &format!("{}", log_message.local_time),
                         log_message.thread.name().unwrap_or_default(),
+                        #[cfg(feature = "thread_id_value")]
                         &format!("{}", log_message.thread.id().as_u64()),
                         &format!("{}", log_message.level),
                         log_message.module_path.as_deref().unwrap_or_default(),
