@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
 
-use std::{io::Write, sync::mpsc, thread};
+use std::{sync::mpsc, thread};
 
 use better_control_panel::{app_id, util::command::ReciverCommand};
 use clap::Parser;
@@ -77,15 +77,8 @@ impl eframe::App for App {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::Builder::from_default_env()
-        .target(env_logger::Target::Stdout)
-        .format(|buf, record| {
-            let log_message = better_control_panel::log::LogMessage::new(record);
-            buf.write_fmt(format_args!("{}\n", log_message))?;
-            better_control_panel::log::write_global_buffer(log_message);
-            Ok(())
-        })
-        .init();
+    better_control_panel::log::init()?;
+    log::set_max_level(log::LevelFilter::Info);
     let _args = Cli::parse();
     let app_id: String = better_control_panel::app_id!();
     let server = match better_control_panel::ipc::Server::new(&app_id) {
@@ -115,6 +108,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if let Ok(cmd) = cmd_receiver.try_recv() {
                 match cmd {
+                    ReciverCommand::Log { app_id, message } => {
+                        log::log!(
+                            message.level,
+                            "{}: {}:{} - {}",
+                            message.thread_name.unwrap_or_else(|| "unknown".to_string()),
+                            message.file.unwrap_or_else(|| "unknown".to_string()),
+                            message.line.unwrap_or(0),
+                            message.message,
+                        );
+                    }
                     ReciverCommand::ExecResult { result } => {
                         info!("脚本执行结果：{}", result);
                     }
@@ -132,6 +135,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let message = server.recevie::<ReciverCommand>();
             match message {
                 Ok(Some(command)) => match command {
+                    ReciverCommand::Log { app_id, message } => {
+                        log::log!(
+                            message.level,
+                            "{}: {}:{} - {}",
+                            message.thread_name.unwrap_or_else(|| "unknown".to_string()),
+                            message.file.unwrap_or_else(|| "unknown".to_string()),
+                            message.line.unwrap_or(0),
+                            message.message,
+                        );
+                    }
                     ReciverCommand::ExecResult { result } => {
                         info!("脚本执行结果：{}", result);
                     }

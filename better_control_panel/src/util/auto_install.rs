@@ -3,7 +3,6 @@ use std::{
     process::Output,
 };
 
-use log::{error, info};
 #[cfg(feature = "rhai")]
 use rhai::{CustomType, TypeBuilder};
 
@@ -182,10 +181,10 @@ pub fn registe_to_rhai(engine: &mut rhai::Engine) {
         let output = Rust::test()?;
 
         if !output.stdout.is_empty() {
-            info!("rustc output: {}", String::from_utf8_lossy(&output.stdout));
+            log::info!("rustc output: {}", String::from_utf8_lossy(&output.stdout));
         }
         if !output.stderr.is_empty() {
-            error!("rustc error: {}", String::from_utf8_lossy(&output.stderr));
+            log::error!("rustc error: {}", String::from_utf8_lossy(&output.stderr));
         }
         if !output.status.success() {
             Err(Error::CommandExecutionError(std::io::Error::new(

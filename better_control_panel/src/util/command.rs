@@ -9,7 +9,13 @@ pub enum Command {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ReciverCommand {
-    ExecResult { result: String },
+    Log {
+        app_id: String,
+        message: crate::log::LogMessageBuf,
+    },
+    ExecResult {
+        result: String,
+    },
     Args(Vec<String>),
     Exit,
 }

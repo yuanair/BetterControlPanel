@@ -3,6 +3,7 @@ use std::fs::File;
 
 use better_control_panel::{
     ipc::Sender,
+    log::pop_global_buffer,
     util::command::{Command, ReciverCommand},
 };
 use clap::Parser;
@@ -97,6 +98,12 @@ impl App {
                 Err(e) => {
                     error!("接收来自其他程序的消息失败：{}", e);
                 }
+            }
+            if let Some(message) = pop_global_buffer().unwrap() {
+                Sender::new("BetterControlPanel")?.send(ReciverCommand::Log {
+                    app_id: better_control_panel::app_id!(),
+                    message: message.to_buf(),
+                })?;
             }
         }
     }

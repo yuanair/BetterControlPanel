@@ -91,6 +91,9 @@ impl App {
         loop {
             match self.server.recevie::<ReciverCommand>() {
                 Ok(Some(command)) => match command {
+                    ReciverCommand::Log { app_id, message } => {
+                        println!("{}: {}", app_id, message);
+                    }
                     ReciverCommand::ExecResult { result } => {
                         println!("执行结果：{}", result);
                         break;
