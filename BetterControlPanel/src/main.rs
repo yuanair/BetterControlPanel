@@ -78,6 +78,7 @@ impl eframe::App for App {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     better_control_panel::log::init()?;
+    better_control_panel::log::redirect_panic_to_log();
     log::set_max_level(log::LevelFilter::Info);
     let _args = Cli::parse();
     let app_id: String = better_control_panel::app_id!();

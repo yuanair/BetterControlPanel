@@ -12,16 +12,29 @@ macro_rules! user_name {
     };
 }
 
+#[cfg(debug_assertions)]
 #[macro_export]
 /// application unique id
 macro_rules! app_id {
     () => {
+        $crate::app_id!(env!("CARGO_PKG_NAME"))
+    };
+    ($name:expr) => {
         format!(
-            "{}_{}_{}",
-            env!("CARGO_PKG_NAME"),
+            "{}_{}_debug_{}",
+            $name,
             env!("CARGO_PKG_VERSION"),
             $crate::user_name!()
         )
+    };
+}
+
+#[cfg(not(debug_assertions))]
+#[macro_export]
+/// application unique id
+macro_rules! app_id {
+    () => {
+        $crate::app_id!(env!("CARGO_PKG_NAME"))
     };
     ($name:expr) => {
         format!(

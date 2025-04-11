@@ -110,6 +110,8 @@ impl App {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // better_control_panel::log::init()?;
+    better_control_panel::log::redirect_panic_to_log();
     env_logger::Builder::from_default_env()
         .target(env_logger::Target::Pipe(Box::new(File::create(
             "Server.log",

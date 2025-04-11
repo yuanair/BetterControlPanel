@@ -1,9 +1,8 @@
 use std::{
     sync::{RwLock, RwLockWriteGuard},
-    thread::{Thread, ThreadId},
+    thread::Thread,
 };
 
-use bincode::de;
 use chrono::{DateTime, Local};
 use lazy_static::lazy_static;
 use log::{Level, Record, SetLoggerError};
@@ -91,7 +90,8 @@ impl LogMessage {
 
 impl std::fmt::Display for LogMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if cfg!(feature = "thread_id_value") {
+        #[cfg(feature = "thread_id_value")]
+        {
             write!(
                 f,
                 "[{} {} {} {} {}]: {}",
@@ -102,7 +102,9 @@ impl std::fmt::Display for LogMessage {
                 self.module_path.as_deref().unwrap_or_default(),
                 self.message
             )
-        } else {
+        }
+        #[cfg(not(feature = "thread_id_value"))]
+        {
             write!(
                 f,
                 "[{} {} {} {}]: {}",
@@ -176,4 +178,10 @@ pub fn pop_global_buffer()
 pub fn try_pop_global_buffer()
 -> Result<Option<LogMessage>, std::sync::TryLockError<RwLockWriteGuard<'static, Buffer>>> {
     Ok(LOGGER.try_write()?.pop())
+}
+
+pub fn redirect_panic_to_log() {
+    std::panic::set_hook(Box::new(move |info| {
+        log::error!(target: "panic", "{}", info);
+    }));
 }
